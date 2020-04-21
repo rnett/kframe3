@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URL
 
 plugins {
-    kotlin("multiplatform") version "1.4-M1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.4-M1"
+    kotlin("multiplatform") version "1.3.72"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.3.72"
 }
 
 group = "org.rnett.kframe3"
@@ -21,10 +21,10 @@ fun getNewestCommit(gitURL: String, default: String = ""): String {
 
 val delegates_version = getNewestCommit("rnett/delegates", "e67c18c9b3")
 
-val ktor_version = "1.3.2-1.4-M1"
-val coroutines_version = "1.3.5-1.4-M1"
+val ktor_version = "1.3.2"
+val coroutines_version = "1.3.5"
 //val kotlinx_html_version = "0.6.12"
-val serialization_version = "0.20.0-1.4-M1"
+val serialization_version = "0.20.0"
 
 repositories {
     mavenCentral()
@@ -32,7 +32,7 @@ repositories {
     maven("https://jitpack.io")
     maven("https://dl.bintray.com/soywiz/soywiz")
     maven("https://kotlin.bintray.com/kotlinx")
-    maven ("https://dl.bintray.com/kotlin/kotlin-eap")
+    maven("https://dl.bintray.com/kotlin/kotlin-eap")
 }
 
 kotlin {
@@ -41,38 +41,36 @@ kotlin {
             dceTask {
                 keep("ktor-ktor-io.\$\$importsForInline\$\$.ktor-ktor-io.io.ktor.utils.io")
             }
-            distribution {
-
+            webpackTask {
             }
+
         }
+
 //        useCommonJs()
 
-        configure(compilations) {
-            kotlinOptions {
-                noStdlib = true
-                sourceMapEmbedSources = "always"
-                metaInfo = true
-                sourceMap = true
-                moduleKind = "commonjs"
-            }
-        }
+//        produceExecutable()
 
-        compilations["main"].kotlinOptions {
-            main = "call"
-        }
+//        configure(compilations) {
+//            kotlinOptions {
+//                noStdlib = true
+//                sourceMapEmbedSources = "always"
+//                metaInfo = true
+//                sourceMap = true
+//                moduleKind = "commonjs"
+//            }
+//        }
+//
+//        compilations["main"].kotlinOptions {
+//            main = "call"
+//        }
     }
 
     jvm {
         // copy compiled JS to JVM resources folder during build
         compilations.named<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmCompilation>("main") {
             tasks.getByName<Copy>(processResourcesTaskName) {
-                js().browser{
-                    webpackTask {
-                        dependsOn(this.name)
-                        from(entry!!.name, destinationDirectory)
-
-                    }
-                }
+                dependsOn("jsBrowserDevelopmentWebpack")
+                from(File("$buildDir/distributions"))
             }
         }
     }
