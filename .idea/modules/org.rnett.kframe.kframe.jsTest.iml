@@ -5,9 +5,9 @@
       <configuration version="3" platform="JavaScript " allPlatforms="JS []" useProjectSettings="false" isTestModule="true" externalProjectId="kframe">
         <dependsOnModuleNames>kframe:commonTest</dependsOnModuleNames>
         <sourceSets>
+          <sourceSet>org.rnett.kframe.kframe.commonTest</sourceSet>
           <sourceSet>org.rnett.kframe.kframe.jsMain</sourceSet>
           <sourceSet>org.rnett.kframe.kframe.commonMain</sourceSet>
-          <sourceSet>org.rnett.kframe.kframe.commonTest</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <externalSystemTestTasks>jsBrowserTest|kframe:jsTest|js</externalSystemTestTasks>

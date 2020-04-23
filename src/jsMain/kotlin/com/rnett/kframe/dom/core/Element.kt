@@ -213,25 +213,29 @@ interface DisplayElementHost : ElementHost {
     fun elementAncestor(): AnyElement
 
     @KFrameDSL
-    operator fun <T : Any> PageDef<T>.invoke(display: WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit): WatchBinding<RouteInstance<*>> = watchBinding(this.routing.currentPageWatcher, filter = { old, new ->
-        old == this || new == this
-    }) { page ->
-        if (page.page == this@invoke) {
-            page as RouteInstance<T>
-            display(page.dataWatcher)
+    operator fun <T> PageDef<T>.invoke(display: WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit): WatchBinding<RouteInstance<*>> =
+        watchBinding(this.routing.currentPageWatcher, filter = { old, new ->
+            old == this || new == this
+        }) { page ->
+            if (page.route.page == this@invoke) {
+                page as RouteInstance<T>
+                display(page.dataWatcher)
+            }
         }
-    }
 
     @KFrameDSL
-    fun <T : Any> onPage(pageDef: PageDef<T>, display: WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit) = pageDef(display)
+    fun <T> onPage(pageDef: PageDef<T>, display: WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit) =
+        pageDef(display)
 
     @KFrameDSL
     fun onPages(displays: PagedBinding.() -> Unit): WatchBinding<RouteInstance<*>> {
         val bindings = PagedBinding().also(displays)
         val routing = bindings.routing ?: error("Must bind at least one page")
-        return watchBinding(routing.currentPageWatcher, {old, new -> old.page in bindings || new.page in bindings }){
+        return watchBinding(
+            routing.currentPageWatcher,
+            { old, new -> old.route.page in bindings || new.route.page in bindings }) {
             it as RouteInstance<Any>
-            val display = bindings[it.page]
+            val display = bindings[it.route.page]
             display?.invoke(this, it.dataWatcher)
         }
     }
@@ -246,7 +250,7 @@ class PagedBinding {
         private set
 
     @KFrameDSL
-    operator fun <T : Any> PageDef<T>.invoke(display: PageBuilder<T>) {
+    operator fun <T> PageDef<T>.invoke(display: PageBuilder<T>) {
         if (this in displayers)
             error("Display already set for page $this")
 
@@ -258,9 +262,9 @@ class PagedBinding {
         displayers[this] = display as PageBuilder<Any>
     }
 
-    operator fun <T: Any> contains(page: PageDef<T>) = page in displayers
+    operator fun <T> contains(page: PageDef<T>) = page in displayers
 
-    operator fun <T: Any> get(page: PageDef<T>): (WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit)? {
+    operator fun <T> get(page: PageDef<T>): (WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit)? {
         return displayers[page] as PageBuilder<T>?
     }
 

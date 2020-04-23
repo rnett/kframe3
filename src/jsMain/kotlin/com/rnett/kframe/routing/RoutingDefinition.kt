@@ -12,7 +12,7 @@ import kotlin.reflect.KProperty
 fun prefixUrl(url: String): String {
     val urlStart = window.location.origin
 
-    return if (url.startsWith(urlStart)) url else urlStart + url
+    return if (url.startsWith(urlStart)) url else urlStart + "/" + url.trimStart('/')
 }
 
 actual abstract class RoutingDefinition : BaseRoutes() {
@@ -30,25 +30,35 @@ actual abstract class RoutingDefinition : BaseRoutes() {
     /**
      * @param url Accepts full url or pathname.  Prefixes with window.location.origin if it doesn't already start with it
      */
-    private fun setUrl(url: String){
-
+    private fun setUrl(url: String) {
         window.history.pushState(null, "", prefixUrl(url))
     }
 
-    fun <T: Any> setUrlIfActive(pageDef: ReactivePageDef<T>, data: T): Boolean {
-        return if(currentPage.page == pageDef) {
-            setUrl(pageDef.toURL(data))
+    fun <T> setUrlIfPageActive(route: ReactiveRoute<T>, data: T): Boolean {
+        return if (currentPage.route.page == route.page) {
+            setUrl(route.toUrl(data))
             true
         } else
             false
     }
 
-    fun <T: Any> setUrl(pageDef: ReactivePageDef<T>, data: T){
-        if(currentPage.page == pageDef)
-            setUrl(pageDef.toURL(data))
-        else
-            error("Current page is not $pageDef, was ${currentPage.page}")
+    fun <T> setUrlIfRouteActive(route: ReactiveRoute<T>, data: T): Boolean {
+        return if (currentPage.route == route) {
+            setUrl(route.toUrl(data))
+            true
+        } else
+            false
     }
+
+    fun <T> setUrl(route: ReactiveRoute<T>, data: T) {
+        if (setUrlIfRouteActive(route, data))
+            return
+        else
+            error("Route $this is not active")
+    }
+
+    fun isActive(route: Route<*>) = currentPage.route == route
+    fun isActive(page: PageDef<*>) = currentPage.route.page == page
 
     /**
      * @param url Accepts full url or pathname.  Prefixes with window.location.origin if it doesn't already start with it
@@ -64,48 +74,47 @@ actual abstract class RoutingDefinition : BaseRoutes() {
     /**
      * @param url Accepts full url or pathname.  Prefixes with window.location.origin if it doesn't already start with it
      */
-    fun <T : Any> goto(pageDef: PageDef<T>, data: T, url: String) {
+    fun <T> goto(route: Route<T>, data: T, url: String) {
         val fullUrl = prefixUrl(url)
-        currentPage = RouteInstance(pageDef, data, fullUrl)
+        currentPage = RouteInstance(route, data, fullUrl)
         setUrl(fullUrl)
     }
 
-    fun <T : Any> goto(pageDef: ReactivePageDef<T>, data: T) {
-        goto(pageDef, data, pageDef.toURL(data))
+    fun <T> goto(route: ReactiveRoute<T>, data: T) {
+        goto(route, data, route.toUrl(data))
     }
 }
 
-//TODO delegates for this (from watch)
-fun <T: Any> ReactivePageDef<T>.setUrl(data: T) = routing.setUrl(this, data)
-fun <T: Any> ReactivePageDef<T>.setUrlIfActive(data: T) = routing.setUrlIfActive(this, data)
-
+fun <T> ReactiveRoute<T>.setUrl(data: T) = routing.setUrl(this, data)
+fun <T> ReactiveRoute<T>.setUrlIfRouteActive(data: T) = routing.setUrlIfRouteActive(this, data)
+fun <T> ReactiveRoute<T>.setUrlIfPageActive(data: T) = routing.setUrlIfPageActive(this, data)
 
 /**
  * @param url Accepts full url or pathname.  Prefixes with window.location.origin if it doesn't already start with it
  */
-fun <T : Any> PageDef<T>.goto(data: T, url: String) {
+fun <T> Route<T>.goto(data: T, url: String) {
     routing.goto(this, data, url)
 }
 
-fun <T : Any> ReactivePageDef<T>.goto(data: T) {
+fun <T : Any> ReactiveRoute<T>.goto(data: T) {
     routing.goto(this, data)
 }
 
-actual class RouteInstance<T : Any> actual constructor(
-    actual val page: PageDef<T>,
+actual class RouteInstance<T> actual constructor(
+    actual val route: Route<T>,
     data: T,
     actual val url: String
 ) {
-    val dataWatcher by lazy{ watchWrapper(data) }
+    val dataWatcher by lazy { watchWrapper(data) }
 
     actual fun getData(): T = dataWatcher.getValue()
 
     operator fun provideDelegate(thisRef: Any?, property: KProperty<*>) = dataWatcher
 
     init {
-        if(page is ReactivePageDef){
+        if (route is ReactiveRoute) {
             dataWatcher.onSet {
-                page.setUrlIfActive(it)
+                route.setUrlIfRouteActive(it)
             }
         }
     }

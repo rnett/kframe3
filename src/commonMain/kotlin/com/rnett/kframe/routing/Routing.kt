@@ -1,30 +1,29 @@
 package com.rnett.kframe.routing
 
-import com.rnett.kframe.utils.PropNameHelper
+import kotlinx.serialization.KSerializer
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.reflect.KClass
 
-data class Route<T : Any>(val page: PageDef<T>, val route: List<RoutePart>, val dataBuilder: UrlData.() -> T)
 
-expect class RouteInstance<T : Any>(page: PageDef<T>, data: T, url: String){
-    val page: PageDef<T>
+expect class RouteInstance<T>(route: Route<T>, data: T, url: String) {
+    val route: Route<T>
     val url: String
     fun getData(): T
 }
 
 //TODO logging (w/ exception thrown)
-private fun <T : Any> parseUrl(url: String, route: Route<T>): RouteInstance<T>? {
+private fun <T> parseUrl(url: String, route: Route<T>): RouteInstance<T>? {
 
     val tailcard = url.substringAfter('?', "").substringBefore("#").split("&").filter { it.isNotBlank() }
         .map { it.split("=").let { it[0] to it[1] } }.toMap()
     val parts = url.substringAfter("://").substringAfter("/").substringBefore('?').split("/").filter { it.isNotBlank() }
 
-    var urlParts = PartedURL(parts, tailcard)
+    var urlParts = PartedUrl(parts, tailcard)
 
     val urlParams = mutableMapOf<String, Any?>()
     val tailcardParams = mutableMapOf<String, Any?>()
+    val rawParams = mutableMapOf<String, String>()
 
     route.route.forEach {
         val result = it.parse(urlParts)
@@ -36,6 +35,8 @@ private fun <T : Any> parseUrl(url: String, route: Route<T>): RouteInstance<T>? 
                     tailcardParams[result.name] = result.value
                 else
                     urlParams[result.name] = result.value
+
+                rawParams[result.name] = result.raw
 
                 urlParts = result.newUrl
             }
@@ -49,13 +50,14 @@ private fun <T : Any> parseUrl(url: String, route: Route<T>): RouteInstance<T>? 
     }
 
     if(urlParts.empty)
-        return RouteInstance(route.page, route.dataBuilder(UrlData(urlParams, tailcardParams)), url)
+        return RouteInstance(route, route.parseData(UrlData(urlParams, tailcardParams), rawParams), url)
     else
         return null
 }
 
 abstract class BaseRoutes internal constructor() {
-    private val routes = mutableListOf<Route<*>>()
+    internal val routes = mutableListOf<Route<*>>()
+
     internal operator fun plusAssign(route: Route<*>) {
         //TODO check for duplicates w/o tailcard (or optional?) params
         //  more of a conflict check
@@ -63,6 +65,13 @@ abstract class BaseRoutes internal constructor() {
             error("Route already registered: ${route.route}")
 
         routes += route
+    }
+
+    operator fun contains(route: Route<*>) = route in routes
+
+    fun replace(route: Route<*>, newRoute: Route<*>) {
+        routes.removeAll { it.route == route.route }
+        routes += newRoute
     }
 
     fun tryParse(url: String): RouteInstance<*>? {
@@ -73,63 +82,100 @@ abstract class BaseRoutes internal constructor() {
         return null
     }
 
-    @OptIn(ExperimentalContracts::class)
-    inner class RoutingBuilder : RouteBuilder() {
-        override fun <T> makeParam(name: String, location: ParamLocation, transform: (String) -> T) =
-            RoutePart.Param(name, location, transform, null, this@BaseRoutes)
+    @RoutingDSL
+    inline infix fun <T> Route<T>.asReactive(crossinline toUrl: (T) -> String): ReactiveRoute<T> {
+        val newRoute = object : ReactiveRoute<T>(this.page, this.route, this.routing) {
+            override fun parseData(urlData: UrlData, rawData: Map<String, String>): T =
+                this@asReactive.parseData(urlData, rawData)
 
-        override fun <T> makeOptionalParam(name: String, location: ParamLocation, transform: (String) -> T) =
-            RoutePart.OptionalParam(name, location, transform, null, this@BaseRoutes)
-
-        override fun <T> makeAnonymousParam(name: String, transform: (String) -> T) =
-            RoutePart.AnonymousParam(name, transform, null, this@BaseRoutes)
-
-        override fun makeStatic(name: String) = RoutePart.Static(name, null, this@BaseRoutes)
-        override fun makeWildcard() = RoutePart.Wildcard(null, this@BaseRoutes)
-
-        private var pageRegistered = false
-        @RoutingDSL
-        override operator fun <T : Any> PageDef<T>.invoke(dataBuilder: UrlData.() -> T): Route<T> {
-
-            if (pageRegistered)
-                error("Page already registered for index")
-
-            val route = Route(this, listOf(), dataBuilder)
-
-            routes += route
-
-            pageRegistered = true
-            return route
+            override fun toUrl(data: T): String = toUrl(data)
         }
 
-        @RoutingDSL
-        override operator fun PageDef<Unit>.invoke() = invoke { Unit }
+        replace(this, newRoute)
+        return newRoute
+    }
+}
+
+@RoutingDSL
+inline fun RoutingDefinition.routing(builder: RoutingBuilder.() -> Unit) {
+    contract {
+        callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+    }
+
+    RoutingBuilder(this).builder()
+}
+
+@OptIn(ExperimentalContracts::class)
+class RoutingBuilder(val routing: RoutingDefinition) : RouteBuilder() {
+    override fun <T> makeParam(name: String, location: ParamLocation, transform: (String) -> T) =
+        RoutePart.Param(name, location, transform, null, routing)
+
+    override fun <T> makeOptionalParam(name: String, location: ParamLocation, transform: (String) -> T) =
+        RoutePart.OptionalParam(name, location, transform, null, routing)
+
+    override fun <T> makeAnonymousParam(name: String, transform: (String) -> T) =
+        RoutePart.AnonymousParam(name, transform, null, routing)
+
+    override fun makeStatic(name: String) = RoutePart.Static(name, null, routing)
+//        override fun makeWildcard() = RoutePart.Wildcard(null, this@BaseRoutes)
+
+    private var pageRegistered = false
+
+    @PublishedApi
+    internal fun <T> addRoute(route: Route<T>) {
+        if (pageRegistered)
+            error("Page already registered for this route")
+
+        routing.routes += route
+
+        pageRegistered = true
     }
 
     @RoutingDSL
-    fun routing(builder: RoutingBuilder.() -> Unit){
-        contract {
-            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+    final override inline operator fun <T> PageDef<T>.invoke(crossinline dataBuilder: UrlData.() -> T): Route<T> {
+        val route = object : Route<T>(this, listOf(), routing) {
+            override fun parseData(urlData: UrlData, rawData: Map<String, String>): T = dataBuilder(urlData)
+
         }
 
-        RoutingBuilder().builder()
+        addRoute(route)
+        return route
+    }
+
+    @RoutingDSL
+    final override inline operator fun <T> PageDef<T>.invoke(
+        crossinline toUrl: (T) -> String,
+        crossinline dataBuilder: UrlData.() -> T
+    ): ReactiveRoute<T> {
+        val route = object : ReactiveRoute<T>(this, listOf(), routing) {
+            override fun parseData(urlData: UrlData, rawData: Map<String, String>): T = dataBuilder(urlData)
+            override fun toUrl(data: T): String = toUrl(data)
+        }
+
+        addRoute(route)
+        return route
+    }
+
+    @RoutingDSL
+    override operator fun PageDef<Unit>.invoke(): ReactiveRoute<Unit> {
+        return invoke("")
+    }
+
+    @RoutingDSL
+    override operator fun PageDef<Unit>.invoke(url: String): ReactiveRoute<Unit> {
+        return invoke({ url }) { Unit }
+    }
+
+    @RoutingDSL
+    override operator fun <T> JsonPageDef<T>.invoke(renames: Map<String, String>): JsonRoute<T> {
+        val route = JsonRoute(this, listOf(), routing, renames)
+        addRoute(route)
+        return route
     }
 }
 
 expect abstract class RoutingDefinition() : BaseRoutes
 
-fun <T : Any> RoutingDefinition.pageDef(name: String, dataClass: KClass<T>) = PageDef(name, dataClass, this)
-inline fun <reified T : Any> RoutingDefinition.pageDef(name: String) = pageDef(name, T::class)
-inline fun <T : Any> RoutingDefinition.pageDef(dataClass: KClass<T>) = PropNameHelper { pageDef(it, dataClass) }
-inline fun <reified T : Any> RoutingDefinition.pageDef() = PropNameHelper { pageDef<T>(it) }
-
-fun <T : Any> RoutingDefinition.pageDef(name: String, dataClass: KClass<T>, toURL: (T) -> String) =
-    ReactivePageDef(name, dataClass, this, toURL)
-
-inline fun <reified T : Any> RoutingDefinition.pageDef(name: String, noinline toURL: (T) -> String) =
-    pageDef(name, T::class, toURL)
-
-inline fun <T : Any> RoutingDefinition.pageDef(dataClass: KClass<T>, noinline toURL: (T) -> String) =
-    PropNameHelper { pageDef(it, dataClass, toURL) }
-
-inline fun <reified T : Any> RoutingDefinition.pageDef(noinline toURL: (T) -> String) = PropNameHelper { pageDef<T>(it, toURL) }
+fun <T> RoutingDefinition.pageDef() = PageDef<T>(this)
+fun RoutingDefinition.unitPageDef() = pageDef<Unit>()
+fun <T> RoutingDefinition.jsonPageDef(serializer: KSerializer<T>) = JsonPageDef<T>(serializer, this)

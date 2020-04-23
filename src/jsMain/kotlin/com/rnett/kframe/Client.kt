@@ -50,7 +50,7 @@ fun main() {
                         button{
                             +"Go Home"
                             on.click{
-                                Routing.mainPage.goto(Unit, "/")
+                                Routing.mainRoute.goto(Unit, "/")
                             }
                         }
                     }
