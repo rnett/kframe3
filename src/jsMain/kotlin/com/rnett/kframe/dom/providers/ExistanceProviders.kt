@@ -106,6 +106,6 @@ internal class ExistenceProviderWrapper(initial: ExistenceProvider): ExistencePr
     override fun styleProvider(): StyleProvider = provider.styleProvider()
     override fun textProvider(text: String): TextProvider = provider.textProvider(text)
 
-    val isRealized: Boolean = provider is RealizedExistenceProvider
-    internal val realizedProviderOrNull  = if (isRealized) provider as RealizedExistenceProvider else null
+    val isRealized: Boolean get() = provider is RealizedExistenceProvider
+    internal val realizedProviderOrNull get()  = if (isRealized) provider as RealizedExistenceProvider else null
 }

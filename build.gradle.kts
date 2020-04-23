@@ -2,11 +2,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URL
 
 plugins {
-    kotlin("multiplatform") version "1.3.72"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.3.72"
+    kotlin("multiplatform") version "1.4-M1"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.4-M1"
 }
 
-group = "org.rnett.kframe3"
+group = "org.rnett.kframe"
 version = "1.0-SNAPSHOT"
 
 fun getNewestCommit(gitURL: String, default: String = ""): String {
@@ -21,10 +21,10 @@ fun getNewestCommit(gitURL: String, default: String = ""): String {
 
 val delegates_version = getNewestCommit("rnett/delegates", "e67c18c9b3")
 
-val ktor_version = "1.3.2"
-val coroutines_version = "1.3.5"
+val ktor_version = "1.3.2-1.4-M1"
+val coroutines_version = "1.3.5-1.4-M1"
 //val kotlinx_html_version = "0.6.12"
-val serialization_version = "0.20.0"
+val serialization_version = "0.20.0-1.4-M1"
 
 repositories {
     mavenCentral()
@@ -37,18 +37,19 @@ repositories {
 
 kotlin {
     js {
+        produceExecutable()
+
         browser {
             dceTask {
                 keep("ktor-ktor-io.\$\$importsForInline\$\$.ktor-ktor-io.io.ktor.utils.io")
             }
             webpackTask {
+                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
             }
-
         }
 
 //        useCommonJs()
 
-//        produceExecutable()
 
 //        configure(compilations) {
 //            kotlinOptions {
@@ -69,7 +70,7 @@ kotlin {
         // copy compiled JS to JVM resources folder during build
         compilations.named<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmCompilation>("main") {
             tasks.getByName<Copy>(processResourcesTaskName) {
-                dependsOn("jsBrowserDevelopmentWebpack")
+                dependsOn("jsBrowserWebpack")
                 from(File("$buildDir/distributions"))
             }
         }

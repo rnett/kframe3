@@ -37,8 +37,9 @@ class EventBinding<T>(
     override fun getValue(): T = dataSource.value
 
     fun resetIfNeeded() {
-        if (changeDetector.update(getValue()))
-            reset()
+        val value =  getValue()
+        if (changeDetector.update(value))
+            reset(value)
     }
 
     private var lastUpdate: TimeMark = TimeSource.Monotonic.markNow()
@@ -97,8 +98,8 @@ class EventBinding<T>(
 @KFrameDSL
 inline fun <T> DisplayElementHost.eventBinding(
     dataSource: DataSource<T>,
-    noinline filter: Filter<T> = {_, _, -> true},
-    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals),
+    noinline filter: Filter<T> = {_, _ -> true},
+    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals, ChangeDetector.HashCode),
     lockoutTime: Duration = 5.milliseconds,
     events: Set<Event<*>> = setOf(),
     noinline display: EventBinding<T>.(T) -> Unit
@@ -107,8 +108,8 @@ inline fun <T> DisplayElementHost.eventBinding(
 @KFrameDSL
 inline fun <T> DisplayElementHost.eventBinding(
     noinline dataSource: () -> T,
-    noinline filter: Filter<T> = {_, _, -> true},
-    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals),
+    noinline filter: Filter<T> = {_, _ -> true},
+    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals, ChangeDetector.HashCode),
     lockoutTime: Duration = 5.milliseconds,
     events: Set<Event<*>> = setOf(),
     noinline display: EventBinding<T>.(T) -> Unit
@@ -125,8 +126,8 @@ inline fun <T> DisplayElementHost.eventBinding(
 @KFrameDSL
 inline fun <T> DisplayElementHost.eventBinding(
     dataSource: KProperty0<T>,
-    noinline filter: Filter<T> = {_, _, -> true},
-    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals),
+    noinline filter: Filter<T> = {_, _ -> true},
+    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals, ChangeDetector.HashCode),
     lockoutTime: Duration = 5.milliseconds,
     events: Set<Event<*>> = setOf(),
     noinline display: EventBinding<T>.(T) -> Unit

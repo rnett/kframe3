@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="1.10" />
+    <bytecodeTargetLevel target="1.10">
+      <module name="org.rnett.kframe3.kframe.jvmMain" target="1.8" />
+      <module name="org.rnett.kframe3.kframe.jvmTest" target="1.8" />
+      <module name="org.rnett.kframe3.kframe3.jvmMain" target="1.8" />
+      <module name="org.rnett.kframe3.kframe3.jvmTest" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

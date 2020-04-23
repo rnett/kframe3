@@ -2,24 +2,26 @@
 <module version="4">
   <component name="FacetManager">
     <facet type="kotlin-language" name="Kotlin">
-      <configuration version="3" platform="JavaScript " allPlatforms="JS []" useProjectSettings="false" isTestModule="false" externalProjectId="kframe3">
-        <dependsOnModuleNames>kframe3:commonMain</dependsOnModuleNames>
+      <configuration version="3" platform="JavaScript " allPlatforms="JS []" useProjectSettings="false" isTestModule="true" externalProjectId="kframe">
+        <dependsOnModuleNames>kframe:commonTest</dependsOnModuleNames>
         <sourceSets>
-          <sourceSet>org.rnett.kframe3.kframe3.commonMain</sourceSet>
+          <sourceSet>org.rnett.kframe.kframe.jsMain</sourceSet>
+          <sourceSet>org.rnett.kframe.kframe.commonMain</sourceSet>
+          <sourceSet>org.rnett.kframe.kframe.commonTest</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
-        <productionOutputPath>$MODULE_DIR$/../../build/js/packages/kframe3/kotlin/kframe3.js</productionOutputPath>
+        <externalSystemTestTasks>jsBrowserTest|kframe:jsTest|js</externalSystemTestTasks>
+        <testOutputPath>$MODULE_DIR$/../../build/js/packages/kframe-test/kotlin/kframe-test.js</testOutputPath>
         <compilerSettings>
           <option name="additionalArguments" value="-Xopt-in=kotlin.contracts.ExperimentalContracts,kotlin.RequiresOptIn,kotlin.time.ExperimentalTime -XXLanguage:+InlineClasses -XXLanguage:+NewInference" />
         </compilerSettings>
         <compilerArguments>
-          <option name="outputFile" value="$MODULE_DIR$/../../build/js/packages/kframe3/kotlin/kframe3.js" />
+          <option name="outputFile" value="$MODULE_DIR$/../../build/js/packages/kframe-test/kotlin/kframe-test.js" />
           <option name="noStdlib" value="true" />
           <option name="sourceMap" value="true" />
-          <option name="sourceMapEmbedSources" value="always" />
           <option name="metaInfo" value="true" />
           <option name="target" value="v5" />
-          <option name="moduleKind" value="commonjs" />
+          <option name="moduleKind" value="umd" />
           <option name="main" value="call" />
           <option name="languageVersion" value="1.4" />
           <option name="apiVersion" value="1.4" />

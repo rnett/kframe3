@@ -5,7 +5,7 @@ import com.rnett.kframe.dom.basics.TitleElement
 import com.rnett.kframe.dom.basics.link
 import com.rnett.kframe.dom.core.style.stylesheet
 import com.rnett.kframe.dom.providers.RealizedExistenceProvider
-import com.rnett.kframe.routing.Routing
+import com.rnett.kframe.routing.RoutingDefinition
 import com.rnett.kframe.style.StyleClassHolder
 import org.w3c.dom.HTMLElement
 import kotlin.browser.document
@@ -43,7 +43,7 @@ object Document {
 }
 
 @KFrameDSL
-inline fun document(router: Routing? = null, crossinline builder: Document.() -> Unit){
+inline fun document(router: RoutingDefinition? = null, crossinline builder: Document.() -> Unit){
     window.onload = {
         router?.init()
         Document.builder()

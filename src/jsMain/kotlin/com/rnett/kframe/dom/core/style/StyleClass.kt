@@ -10,7 +10,7 @@ internal class StyleClassHolder internal constructor(val stylesheetElement: Styl
     private val styleClasses = mutableMapOf<Int, String>()
 
     private fun newClass(): String {
-        var klass = "style-$Random.nextInt().absoluteValue}"
+        var klass = "style-${Random.nextInt().absoluteValue}"
         while (klass in usedClasses)
             klass = "style-${Random.nextInt().absoluteValue}"
 

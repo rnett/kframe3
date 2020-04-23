@@ -3,21 +3,16 @@ package com.rnett.kframe.dom.basics
 import com.rnett.kframe.dom.core.KFrameDSL
 import com.rnett.kframe.dom.core.MetaElement
 import com.rnett.kframe.dom.core.MetaElementHost
-import com.rnett.kframe.dom.providers.DomProvider
 
 @KFrameDSL
 inline val MetaElementHost.script
-    inline get() = ScriptElement(this, domProvider)
+    inline get() = ScriptElement(this)
 
-class ScriptElement(parent: MetaElementHost?, domProvider: DomProvider) : MetaElement<ScriptElement>(parent, domProvider, "script") {
+class ScriptElement(parent: MetaElementHost) : MetaElement<ScriptElement>(parent, "script") {
     var src by attributes
     var type by attributes
     var integrity by attributes
     var crossorigin by attributes
-
-    override fun makeNew(parent: MetaElementHost?, domProvider: DomProvider): ScriptElement {
-        return ScriptElement(parent, domProvider)
-    }
 }
 
 @KFrameDSL
@@ -25,13 +20,13 @@ inline fun MetaElementHost.script(
     src: String,
     type: String? = "text/javascript",
     builder: ScriptElement.() -> Unit = {}
-) = ScriptElement(this, domProvider)() {
+) = ScriptElement(this)() {
     this.src = src
     this.type = type
     builder()
 }
 
-class TitleElement(parent: MetaElementHost?, domProvider: DomProvider) : MetaElement<TitleElement>(parent, domProvider, "title") {
+class TitleElement(parent: MetaElementHost) : MetaElement<TitleElement>(parent, "title") {
 
     private val titleElement = +""
 
@@ -41,32 +36,24 @@ class TitleElement(parent: MetaElementHost?, domProvider: DomProvider) : MetaEle
             titleElement.text = v
         }
 
-    constructor(parent: MetaElementHost, title: String) : this(parent, parent.domProvider) {
+    constructor(parent: MetaElementHost, title: String) : this(parent) {
         this.titleText = title
-    }
-
-    override fun makeNew(parent: MetaElementHost?, domProvider: DomProvider): TitleElement {
-        return TitleElement(parent, domProvider)
     }
 }
 
-class LinkElement(parent: MetaElementHost?, domProvider: DomProvider) : MetaElement<LinkElement>(parent, domProvider, "link") {
+class LinkElement(parent: MetaElementHost) : MetaElement<LinkElement>(parent, "link") {
     var rel by attributes
     var href by attributes
     var integrity by attributes
     var crossorigin by attributes
-
-    override fun makeNew(parent: MetaElementHost?, domProvider: DomProvider): LinkElement {
-        return LinkElement(parent, domProvider)
-    }
 }
 
 @KFrameDSL
 inline val MetaElementHost.link
-    inline get() = LinkElement(this, domProvider)
+    inline get() = LinkElement(this)
 
 @KFrameDSL
-inline fun MetaElementHost.link(href: String, rel: String, builder: LinkElement.() -> Unit = {}) = LinkElement(this, domProvider)() {
+inline fun MetaElementHost.link(href: String, rel: String, builder: LinkElement.() -> Unit = {}) = LinkElement(this)() {
     this.href = href
     this.rel = rel
     builder()

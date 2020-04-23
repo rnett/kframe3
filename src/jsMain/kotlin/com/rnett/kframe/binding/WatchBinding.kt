@@ -17,7 +17,7 @@ class WatchBinding<T>(
 
     fun resetIfNeeded(value: T = getValue()) {
         if (changeDetector.update(value))
-            reset()
+            reset(value)
     }
 
     private val watcher = watch.onSet { resetIfNeeded(it) }
@@ -31,7 +31,7 @@ class WatchBinding<T>(
 @KFrameDSL
 inline fun <T> DisplayElementHost.watchBinding(
     watch: BaseWatch<T>,
-    noinline filter: Filter<T> = {_, _, -> true},
-    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals),
+    noinline filter: Filter<T> = {_, _ -> true},
+    changeDetectors: List<ChangeDetector<*>> = listOf(ChangeDetector.Equals, ChangeDetector.HashCode),
     noinline display: WatchBinding<T>.(T) -> Unit
 ) = WatchBinding(this, watch, filter, display, changeDetectors)

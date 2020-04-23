@@ -1,9 +1,6 @@
 package com.rnett.kframe.dom.core.style
 
-import com.rnett.kframe.dom.core.ElementHost
-import com.rnett.kframe.dom.core.KFrameDSL
-import com.rnett.kframe.dom.core.MetaElement
-import com.rnett.kframe.dom.core.MetaElementHost
+import com.rnett.kframe.dom.core.*
 
 
 // scoped and global stylesheet elements
@@ -59,6 +56,8 @@ class Stylesheet {
 class StyleElement(parent: MetaElementHost) : MetaElement<StyleElement>(parent, "style") {
     val internalStylesheet = Stylesheet()
 
+    private val textElement: TextElement = +""
+
     inline operator fun invoke(block: Stylesheet.() -> Unit): StyleElement {
         internalStylesheet.block()
         updateCSS()
@@ -68,12 +67,16 @@ class StyleElement(parent: MetaElementHost) : MetaElement<StyleElement>(parent, 
     inline fun styles(block: Stylesheet.() -> Unit) = invoke(block)
 
     fun updateCSS() {
-        underlying.innerHTML = "\n" + internalStylesheet.toCSS() + "\n"
+        textElement.text = "\n" + internalStylesheet.toCSS() + "\n"
     }
 
     override fun addElement(element: ElementHost) {
-        error("Can't add children to Style elements")
+        if(element !is TextElement || children.isNotEmpty())
+            error("Can't add non-text children or more than one child to Style elements")
+        else
+            super.addElement(element)
     }
+
 }
 
 @KFrameDSL

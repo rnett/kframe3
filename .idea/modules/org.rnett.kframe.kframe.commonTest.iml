@@ -2,11 +2,11 @@
 <module version="4">
   <component name="FacetManager">
     <facet type="kotlin-language" name="Kotlin">
-      <configuration version="3" platform="Common (experimental) " allPlatforms="JS []/JVM [1.6]/Native []" useProjectSettings="false" isTestModule="true" externalProjectId="kframe3">
+      <configuration version="3" platform="Common (experimental) " allPlatforms="JS []/JVM [1.6]/Native []" useProjectSettings="false" isTestModule="true" externalProjectId="kframe">
         <newMppModelJpsModuleKind>SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <externalSystemTestTasks>
-          <externalSystemTestTask>jsBrowserTest|kframe3:jsTest|js</externalSystemTestTask>
-          <externalSystemTestTask>jvmTest|kframe3:jvmTest|jvm</externalSystemTestTask>
+          <externalSystemTestTask>jsBrowserTest|kframe:jsTest|js</externalSystemTestTask>
+          <externalSystemTestTask>jvmTest|kframe:jvmTest|jvm</externalSystemTestTask>
         </externalSystemTestTasks>
         <compilerSettings>
           <option name="additionalArguments" value="-Xuse-experimental=kotlin.contracts.ExperimentalContracts,kotlin.RequiresOptIn,kotlin.time.ExperimentalTime -XXLanguage:+InlineClasses -XXLanguage:+NewInference" />

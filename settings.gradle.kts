@@ -1,4 +1,4 @@
-rootProject.name = "kframe3"
+rootProject.name = "kframe"
 enableFeaturePreview("GRADLE_METADATA")
 pluginManagement {
     repositories {

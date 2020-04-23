@@ -1,15 +1,21 @@
 package com.rnett.kframe.dom.core
 
 import com.rnett.kframe.binding.WatchBinding
+import com.rnett.kframe.binding.WrapperWatch
 import com.rnett.kframe.binding.watchBinding
 import com.rnett.kframe.dom.core.style.Style
 import com.rnett.kframe.dom.providers.*
 import com.rnett.kframe.routing.PageDef
 import com.rnett.kframe.routing.RouteInstance
-import com.rnett.kframe.routing.Routing
+import com.rnett.kframe.routing.RoutingDefinition
 import com.rnett.kframe.style.StyleClass
 import com.rnett.kframe.utils.byInt
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.w3c.dom.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 import org.w3c.dom.Element as W3Element
@@ -23,7 +29,7 @@ interface HasNode {
     val realizedNodeOrNull: Node?
 }
 
-interface ElementHost {
+interface ElementHost: CoroutineScope {
     fun addElement(element: ElementHost)
     fun removeChild(element: ElementHost)
     fun remove()
@@ -50,6 +56,14 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
 
     private val _provider = ExistenceProviderWrapper(provider)
     val provider: ExistenceProvider = _provider
+
+    private var _supervisorJob: CompletableJob? = null
+    private val scope: CoroutineScope by lazy{
+        CoroutineScope(Dispatchers.Default + (_supervisorJob ?: SupervisorJob().also { _supervisorJob = it }))
+    }
+
+    override val coroutineContext: CoroutineContext
+        get() = scope.coroutineContext
 
     override fun existenceProvider(tag: String): ExistenceProvider = provider.existenceProvider(tag)
     override fun textProvider(text: String): TextProvider = provider.textProvider(text)
@@ -140,6 +154,7 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
         children.forEach { it.remove() }
         parent?.removeChild(this)
         provider.remove()
+        _supervisorJob?.cancel()
         isRemoved = true
         Document.removeElement(elementId)
     }
@@ -164,7 +179,10 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
                 } else if (elementAt is Text && it is TextElement) {
                     it.attach(RealizedTextProvider(elementAt))
                 } else {
-                    insertChildNode(idx, it)
+                    if(it is HasNode)
+                        insertChildNode(idx, it)
+                    else
+                        return@forEach
                 }
                 idx++
             } else {
@@ -195,37 +213,40 @@ interface DisplayElementHost : ElementHost {
     fun elementAncestor(): AnyElement
 
     @KFrameDSL
-    operator fun <T : Any> PageDef<T>.invoke(display: WatchBinding<RouteInstance<*>>.(T) -> Unit): WatchBinding<RouteInstance<*>> = watchBinding(this.routing.currentPageWatcher, filter = { old, new ->
+    operator fun <T : Any> PageDef<T>.invoke(display: WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit): WatchBinding<RouteInstance<*>> = watchBinding(this.routing.currentPageWatcher, filter = { old, new ->
         old == this || new == this
     }) { page ->
         if (page.page == this@invoke) {
             page as RouteInstance<T>
-            display(page.data)
+            display(page.dataWatcher)
         }
     }
 
     @KFrameDSL
-    fun <T : Any> onPage(pageDef: PageDef<T>, display: WatchBinding<RouteInstance<*>>.(T) -> Unit) = pageDef(display)
+    fun <T : Any> onPage(pageDef: PageDef<T>, display: WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit) = pageDef(display)
 
     @KFrameDSL
-    fun <T : Any> onPages(displays: PagedBinding.() -> Unit): WatchBinding<RouteInstance<*>> {
+    fun onPages(displays: PagedBinding.() -> Unit): WatchBinding<RouteInstance<*>> {
         val bindings = PagedBinding().also(displays)
         val routing = bindings.routing ?: error("Must bind at least one page")
         return watchBinding(routing.currentPageWatcher, {old, new -> old.page in bindings || new.page in bindings }){
             it as RouteInstance<Any>
             val display = bindings[it.page]
-            display(it.data)
+            display?.invoke(this, it.dataWatcher)
         }
     }
 }
 
-class PagedBinding {
-    private val displayers: MutableMap<PageDef<*>, WatchBinding<RouteInstance<*>>.(Any) -> Unit> = mutableMapOf()
+typealias PageBuilder<T> = WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit
 
-    internal var routing: Routing? = null
+class PagedBinding {
+    private val displayers: MutableMap<PageDef<*>, PageBuilder<Any>> = mutableMapOf()
+
+    internal var routing: RoutingDefinition? = null
         private set
 
-    operator fun <T : Any> PageDef<T>.invoke(display: WatchBinding<RouteInstance<*>>.(T) -> Unit) {
+    @KFrameDSL
+    operator fun <T : Any> PageDef<T>.invoke(display: PageBuilder<T>) {
         if (this in displayers)
             error("Display already set for page $this")
 
@@ -234,15 +255,13 @@ class PagedBinding {
         else if (this@PagedBinding.routing != this.routing)
             error("Can't bind PageDefs from different Routings")
 
-        displayers[this] = display as WatchBinding<RouteInstance<*>>.(Any) -> Unit
+        displayers[this] = display as PageBuilder<Any>
     }
-
-
 
     operator fun <T: Any> contains(page: PageDef<T>) = page in displayers
 
-    operator fun <T: Any> get(page: PageDef<T>): WatchBinding<RouteInstance<*>>.(T) -> Unit {
-        return displayers[page] as WatchBinding<RouteInstance<*>>.(T) -> Unit
+    operator fun <T: Any> get(page: PageDef<T>): (WatchBinding<RouteInstance<*>>.(WrapperWatch<T>) -> Unit)? {
+        return displayers[page] as PageBuilder<T>?
     }
 
 }

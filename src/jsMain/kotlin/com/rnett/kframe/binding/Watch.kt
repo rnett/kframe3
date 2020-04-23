@@ -14,7 +14,7 @@ interface ListenerHost<T, I : ListenerId> : ReadWriteProperty<Any?, T> {
     fun getValue(): T
     fun setValue(value: T)
     fun removeListener(listenerId: I)
-    fun update(transform: (T) -> T)
+    fun update(transform: (T) -> Unit)
 }
 
 interface ListenerId {
@@ -49,8 +49,8 @@ class WatcherId internal constructor(val id: Int, watch: ListenerHost<*, Watcher
 
 //TODO store objects w/ overloaded methods w/ lambdas like Binding?
 abstract class BaseWatch<T>() : ListenerHost<T, WatcherId> {
-    private val _watchers = mutableMapOf<WatcherId, (T) -> Unit>()
-    private val watchers: Map<WatcherId, (T) -> Unit> = _watchers
+    private val _watchers by lazy{ mutableMapOf<WatcherId, (T) -> Unit>() }
+    private val watchers: Map<WatcherId, (T) -> Unit> by lazy{ _watchers }
 
 
     /**
@@ -76,8 +76,15 @@ abstract class BaseWatch<T>() : ListenerHost<T, WatcherId> {
     @PublishedApi
     internal fun notify(newValue: T) = watchers.forEach { it.value(newValue) }
 
-    final override inline fun update(transform: (T) -> T) {
-        setValue(transform(getValue()))
+    fun forceUpdate(){
+        val value = getValue()
+        watchers.forEach { it.value(value) }
+    }
+
+    final override inline fun update(transform: (T) -> Unit) {
+        val value = getValue()
+        transform(value)
+        setValue(value)
     }
 }
 

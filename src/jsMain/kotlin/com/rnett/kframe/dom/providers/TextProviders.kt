@@ -44,6 +44,7 @@ internal class TextProviderWrapper(initial: TextProvider): TextProvider, Attacha
     private var provider: TextProvider = initial
 
     override fun attach(provider: RealizedTextProvider) {
+        provider.text = text
         this.provider = provider
     }
 
@@ -61,6 +62,6 @@ internal class TextProviderWrapper(initial: TextProvider): TextProvider, Attacha
         provider.remove()
     }
 
-    val isRealized: Boolean = provider is RealizedTextProvider
-    internal val realizedProviderOrNull  = if (isRealized) provider as RealizedTextProvider else null
+    val isRealized: Boolean get() = provider is RealizedTextProvider
+    internal val realizedProviderOrNull get()  = if (isRealized) provider as RealizedTextProvider else null
 }

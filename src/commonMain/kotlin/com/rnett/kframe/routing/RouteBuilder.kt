@@ -9,7 +9,7 @@ import kotlin.contracts.contract
 @Retention(AnnotationRetention.BINARY)
 annotation class RoutingDSL
 
-class DataBuilder(val urlParams: Map<String, Any?>, val tailcardParams: Map<String, Any?>) {
+class UrlData(val urlParams: Map<String, Any?>, val tailcardParams: Map<String, Any?>) {
 
     operator fun <T> RoutePart.Param<T>.unaryPlus(): T = when (location) {
         ParamLocation.Url -> urlParams[name] ?: error("Required url parameter not found: $name")
@@ -111,8 +111,10 @@ abstract class RouteBuilder {
 
     @RoutingDSL
     fun <T> urlParam(name: String, transform: (String) -> T) = param(name, ParamLocation.Url, transform)
+
     @RoutingDSL
     fun <T> tailcardParam(name: String, transform: (String) -> T) = param(name, ParamLocation.Tailcard, transform)
+
     @RoutingDSL
     fun <T> eitherParam(name: String, transform: (String) -> T) = param(name, ParamLocation.Either, transform)
 
@@ -120,18 +122,24 @@ abstract class RouteBuilder {
     fun <T> optionalParam(name: String, location: ParamLocation, transform: (String) -> T) =
         makeOptionalParam(name, location, transform)
 
-    @RoutingDSL fun <T> urlOptionalParam(name: String, transform: (String) -> T) = optionalParam(name, ParamLocation.Url, transform)
-    @RoutingDSL fun <T> tailcardOptionalParam(name: String, transform: (String) -> T) =
+    @RoutingDSL
+    fun <T> urlOptionalParam(name: String, transform: (String) -> T) = optionalParam(name, ParamLocation.Url, transform)
+    @RoutingDSL
+    fun <T> tailcardOptionalParam(name: String, transform: (String) -> T) =
         optionalParam(name, ParamLocation.Tailcard, transform)
 
-    @RoutingDSL fun <T> eitherOptionalParam(name: String, transform: (String) -> T) =
+    @RoutingDSL
+    fun <T> eitherOptionalParam(name: String, transform: (String) -> T) =
         optionalParam(name, ParamLocation.Either, transform)
 
-    @RoutingDSL fun <T> anonymousParam(name: String, transform: (String) -> T) = makeAnonymousParam(name, transform)
+    @RoutingDSL
+    fun <T> anonymousParam(name: String, transform: (String) -> T) = makeAnonymousParam(name, transform)
 
-    @RoutingDSL fun static(name: String) = makeStatic(name)
+    @RoutingDSL
+    fun static(name: String) = makeStatic(name)
 
-    @RoutingDSL fun static(vararg names: String): RoutePart.Static {
+    @RoutingDSL
+    fun static(vararg names: String): RoutePart.Static {
         var part = static(names.first())
         names.drop(1).forEach {
             part = part.static(it)
@@ -139,12 +147,14 @@ abstract class RouteBuilder {
         return part
     }
 
-    @RoutingDSL fun wildcard() = makeWildcard()
+    @RoutingDSL
+    fun wildcard() = makeWildcard()
 
     /**
      * Allows statics and wildcards, separated by slashes
      */
-    @RoutingDSL fun path(path: String): RoutePart {
+    @RoutingDSL
+    fun path(path: String): RoutePart {
         val parts = path.split("/")
         var part = parts.first().let {
             if (it == "*")
@@ -164,22 +174,32 @@ abstract class RouteBuilder {
 
     // no builder, no transform
 
-    @RoutingDSL fun stringParam(name: String, location: ParamLocation) = param(name, location, { it })
-    @RoutingDSL fun urlStringParam(name: String) = stringParam(name, ParamLocation.Url)
-    @RoutingDSL fun tailcardStringParam(name: String) = stringParam(name, ParamLocation.Tailcard)
-    @RoutingDSL fun eitherStringParam(name: String) = stringParam(name, ParamLocation.Either)
+    @RoutingDSL
+    fun stringParam(name: String, location: ParamLocation) = param(name, location, { it })
+    @RoutingDSL
+    fun urlStringParam(name: String) = stringParam(name, ParamLocation.Url)
+    @RoutingDSL
+    fun tailcardStringParam(name: String) = stringParam(name, ParamLocation.Tailcard)
+    @RoutingDSL
+    fun eitherStringParam(name: String) = stringParam(name, ParamLocation.Either)
 
-    @RoutingDSL fun optionalStringParam(name: String, location: ParamLocation) = optionalParam(name, location, { it })
-    @RoutingDSL fun urlOptionalStringParam(name: String) = optionalStringParam(name, ParamLocation.Url)
-    @RoutingDSL fun tailcardOptionalStringParam(name: String) = optionalStringParam(name, ParamLocation.Tailcard)
-    @RoutingDSL fun eitherOptionalStringParam(name: String) = optionalStringParam(name, ParamLocation.Either)
+    @RoutingDSL
+    fun optionalStringParam(name: String, location: ParamLocation) = optionalParam(name, location, { it })
+    @RoutingDSL
+    fun urlOptionalStringParam(name: String) = optionalStringParam(name, ParamLocation.Url)
+    @RoutingDSL
+    fun tailcardOptionalStringParam(name: String) = optionalStringParam(name, ParamLocation.Tailcard)
+    @RoutingDSL
+    fun eitherOptionalStringParam(name: String) = optionalStringParam(name, ParamLocation.Either)
 
-    @RoutingDSL fun anonymousStringParam(name: String) = anonymousParam(name, { it })
+    @RoutingDSL
+    fun anonymousStringParam(name: String) = anonymousParam(name, { it })
 
 
     // builder, transform
 
-    @RoutingDSL fun <T> param(
+    @RoutingDSL
+    fun <T> param(
         name: String,
         location: ParamLocation,
         transform: (String) -> T,
@@ -191,7 +211,8 @@ abstract class RouteBuilder {
         return param(name, location, transform).also { it.invoke(builder) }
     }
 
-    @RoutingDSL fun <T> urlParam(
+    @RoutingDSL
+    fun <T> urlParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.Param<T>.(RoutePart.Param<T>) -> Unit
@@ -202,7 +223,8 @@ abstract class RouteBuilder {
         return param(name, ParamLocation.Url, transform, builder)
     }
 
-    @RoutingDSL fun <T> tailcardParam(
+    @RoutingDSL
+    fun <T> tailcardParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.Param<T>.(RoutePart.Param<T>) -> Unit
@@ -214,7 +236,8 @@ abstract class RouteBuilder {
         return param(name, ParamLocation.Tailcard, transform, builder)
     }
 
-    @RoutingDSL fun <T> eitherParam(
+    @RoutingDSL
+    fun <T> eitherParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.Param<T>.(RoutePart.Param<T>) -> Unit
@@ -225,7 +248,8 @@ abstract class RouteBuilder {
         return param(name, ParamLocation.Either, transform, builder)
     }
 
-    @RoutingDSL fun <T> optionalParam(
+    @RoutingDSL
+    fun <T> optionalParam(
         name: String,
         location: ParamLocation,
         transform: (String) -> T,
@@ -237,7 +261,8 @@ abstract class RouteBuilder {
         return optionalParam(name, location, transform).also { it.invoke(builder) }
     }
 
-    @RoutingDSL fun <T> urlOptionalParam(
+    @RoutingDSL
+    fun <T> urlOptionalParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.OptionalParam<T>.(RoutePart.OptionalParam<T>) -> Unit
@@ -248,7 +273,8 @@ abstract class RouteBuilder {
         return optionalParam(name, ParamLocation.Url, transform, builder)
     }
 
-    @RoutingDSL fun <T> tailcardOptionalParam(
+    @RoutingDSL
+    fun <T> tailcardOptionalParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.OptionalParam<T>.(RoutePart.OptionalParam<T>) -> Unit
@@ -259,7 +285,8 @@ abstract class RouteBuilder {
         return optionalParam(name, ParamLocation.Tailcard, transform, builder)
     }
 
-    @RoutingDSL fun <T> eitherOptionalParam(
+    @RoutingDSL
+    fun <T> eitherOptionalParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.OptionalParam<T>.(RoutePart.OptionalParam<T>) -> Unit
@@ -270,7 +297,8 @@ abstract class RouteBuilder {
         return optionalParam(name, ParamLocation.Either, transform, builder)
     }
 
-    @RoutingDSL fun <T> anonymousParam(
+    @RoutingDSL
+    fun <T> anonymousParam(
         name: String,
         transform: (String) -> T,
         builder: RoutePart.AnonymousParam<T>.(RoutePart.AnonymousParam<T>) -> Unit
@@ -282,31 +310,10 @@ abstract class RouteBuilder {
             .also { it.invoke(builder) }
     }
 
-    @RoutingDSL fun static(name: String, builder: RoutePart.() -> Unit): RoutePart.Static {
-        contract {
-            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
-        }
-        return static(name).also { it.builder() }
-    }
-
-    @RoutingDSL fun static(vararg names: String, builder: RoutePart.() -> Unit): RoutePart.Static {
-        contract {
-            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
-        }
-
-        return static(*names).also { it.builder() }
-    }
-
-    @RoutingDSL fun wildcard(builder: RoutePart.() -> Unit): RoutePart.Wildcard {
-        contract {
-            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
-        }
-        return wildcard().also { it.builder() }
-    }
-
     // builder, no transform
 
-    @RoutingDSL fun stringParam(
+    @RoutingDSL
+    fun stringParam(
         name: String,
         location: ParamLocation,
         builder: RoutePart.Param<String>.(RoutePart.Param<String>) -> Unit
@@ -317,7 +324,8 @@ abstract class RouteBuilder {
         return stringParam(name, location).also { it.invoke(builder) }
     }
 
-    @RoutingDSL fun urlStringParam(
+    @RoutingDSL
+    fun urlStringParam(
         name: String,
         builder: RoutePart.Param<String>.(RoutePart.Param<String>) -> Unit
     ): RoutePart.Param<String> {
@@ -327,7 +335,8 @@ abstract class RouteBuilder {
         return stringParam(name, ParamLocation.Url, builder)
     }
 
-    @RoutingDSL fun tailcardStringParam(
+    @RoutingDSL
+    fun tailcardStringParam(
         name: String,
         builder: RoutePart.Param<String>.(RoutePart.Param<String>) -> Unit
     ): RoutePart.Param<String> {
@@ -337,7 +346,8 @@ abstract class RouteBuilder {
         return stringParam(name, ParamLocation.Tailcard, builder)
     }
 
-    @RoutingDSL fun eitherStringParam(
+    @RoutingDSL
+    fun eitherStringParam(
         name: String,
         builder: RoutePart.Param<String>.(RoutePart.Param<String>) -> Unit
     ): RoutePart.Param<String> {
@@ -347,7 +357,8 @@ abstract class RouteBuilder {
         return stringParam(name, ParamLocation.Either, builder)
     }
 
-    @RoutingDSL fun optionalStringParam(
+    @RoutingDSL
+    fun optionalStringParam(
         name: String,
         location: ParamLocation,
         builder: RoutePart.OptionalParam<String>.(RoutePart.OptionalParam<String>) -> Unit
@@ -358,7 +369,8 @@ abstract class RouteBuilder {
         return optionalStringParam(name, location).also { it.invoke(builder) }
     }
 
-    @RoutingDSL fun urlOptionalStringParam(
+    @RoutingDSL
+    fun urlOptionalStringParam(
         name: String,
         builder: RoutePart.OptionalParam<String>.(RoutePart.OptionalParam<String>) -> Unit
     ): RoutePart.OptionalParam<String> {
@@ -368,7 +380,8 @@ abstract class RouteBuilder {
         return optionalStringParam(name, ParamLocation.Url, builder)
     }
 
-    @RoutingDSL fun tailcardOptionalStringParam(
+    @RoutingDSL
+    fun tailcardOptionalStringParam(
         name: String,
         builder: RoutePart.OptionalParam<String>.(RoutePart.OptionalParam<String>) -> Unit
     ): RoutePart.OptionalParam<String> {
@@ -378,7 +391,8 @@ abstract class RouteBuilder {
         return optionalStringParam(name, ParamLocation.Tailcard, builder)
     }
 
-    @RoutingDSL fun eitherOptionalStringParam(
+    @RoutingDSL
+    fun eitherOptionalStringParam(
         name: String,
         builder: RoutePart.OptionalParam<String>.(RoutePart.OptionalParam<String>) -> Unit
     ): RoutePart.OptionalParam<String> {
@@ -388,7 +402,8 @@ abstract class RouteBuilder {
         return optionalStringParam(name, ParamLocation.Either, builder)
     }
 
-    @RoutingDSL fun anonymousStringParam(
+    @RoutingDSL
+    fun anonymousStringParam(
         name: String,
         builder: RoutePart.AnonymousParam<String>.(RoutePart.AnonymousParam<String>) -> Unit
     ): RoutePart.AnonymousParam<String> {
@@ -397,6 +412,45 @@ abstract class RouteBuilder {
         }
         return anonymousStringParam(name).also { it.invoke(builder) }
     }
+
+    @RoutingDSL
+    fun static(name: String, builder: RoutePart.() -> Unit): RoutePart.Static {
+        contract {
+            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+        }
+        return static(name).also { it.builder() }
+    }
+
+    @RoutingDSL
+    fun static(vararg names: String, builder: RoutePart.() -> Unit): RoutePart.Static {
+        contract {
+            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+        }
+
+        return static(*names).also { it.builder() }
+    }
+
+    @RoutingDSL
+    fun wildcard(builder: RoutePart.() -> Unit): RoutePart.Wildcard {
+        contract {
+            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+        }
+        return wildcard().also { it.builder() }
+    }
+    @RoutingDSL
+    fun path(path: String, builder: RoutePart.() -> Unit): RoutePart {
+        contract {
+            callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+        }
+        val part = path(path)
+        return part.also { it.builder() }
+    }
+
+    @RoutingDSL
+    abstract operator fun <T : Any> PageDef<T>.invoke(dataBuilder: UrlData.() -> T): Route<T>
+
+    @RoutingDSL
+    abstract operator fun PageDef<Unit>.invoke(): Route<Unit>
 }
 
 private fun checkUrlPart(name: String) {
@@ -412,7 +466,7 @@ private fun checkUrlPart(name: String) {
 
 sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBuilder() {
 
-    abstract fun handle(url: PartedURL): RouterOption
+    abstract fun parse(url: PartedURL): RouterOption
 
     class Static internal constructor(val name: String, parent: RoutePart?, routes: BaseRoutes) :
         RoutePart(parent, routes) {
@@ -420,7 +474,7 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
             checkUrlPart(name)
         }
 
-        override fun handle(url: PartedURL): RouterOption =
+        override fun parse(url: PartedURL): RouterOption =
             if (url.firstPart == name)
                 RouterOption.Success(url.dropPart(1))
             else
@@ -448,7 +502,7 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
     }
 
     class Wildcard internal constructor(parent: RoutePart?, routes: BaseRoutes) : RoutePart(parent, routes) {
-        override fun handle(url: PartedURL): RouterOption =
+        override fun parse(url: PartedURL): RouterOption =
             if (url.firstPart != null)
                 RouterOption.Success(url.dropPart(1))
             else
@@ -482,13 +536,13 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
         init {
             checkUrlPart(name)
 
-            if (backtrace.any { if (it is NamedParam) name == it.name else false })
+            if (backtrace.any { if (it !== this && it is NamedParam) name == it.name else false })
                 error("Already declared param with name \"$name\" for this route: $backtrace")
         }
 
         operator fun invoke(builder: Param<T>.(Param<T>) -> Unit) = builder(this)
 
-        override fun handle(url: PartedURL): RouterOption =
+        override fun parse(url: PartedURL): RouterOption =
             when (location) {
                 ParamLocation.Url -> url.tryUrlParam(name, transform)
                 ParamLocation.Tailcard -> url.tryTailcardParam(name, transform)
@@ -532,18 +586,18 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
             checkUrlPart(name)
 
 
-            if (backtrace.any { if (it is NamedParam) name == it.name else false })
+            if (backtrace.any { if (it !== this && it is NamedParam) name == it.name else false })
                 error("Already declared param with name \"$name\" for this route: $backtrace")
         }
 
         operator fun invoke(builder: OptionalParam<T>.(OptionalParam<T>) -> Unit) = builder(this)
 
-        override fun handle(url: PartedURL): RouterOption =
+        override fun parse(url: PartedURL): RouterOption =
             when (location) {
-                ParamLocation.Url -> url.tryUrlParam(name, transform)
-                ParamLocation.Tailcard -> url.tryTailcardParam(name, transform)
+                ParamLocation.Url -> url.tryUrlParam(name, transform).ifFail { RouterOption.Success(url) }
+                ParamLocation.Tailcard -> url.tryTailcardParam(name, transform).ifFail { RouterOption.Success(url) }
                 ParamLocation.Either -> url.tryUrlParam(name, transform)
-                    .ifFail { url.tryTailcardParam(name, transform) }
+                    .ifFail { url.tryTailcardParam(name, transform) }.ifFail { RouterOption.Success(url) }
             }
 
         override fun toString(): String {
@@ -581,13 +635,13 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
             checkUrlPart(name)
 
 
-            if (backtrace.any { if (it is NamedParam) name == it.name else false })
+            if (backtrace.any { if (it !== this && it is NamedParam) name == it.name else false })
                 error("Already declared param with name \"$name\" for this route: $backtrace")
         }
 
         operator fun invoke(builder: AnonymousParam<T>.(AnonymousParam<T>) -> Unit) = builder(this)
 
-        override fun handle(url: PartedURL): RouterOption {
+        override fun parse(url: PartedURL): RouterOption {
             return if (url.firstPart != null) {
                 val value = try {
                     transform(url.firstPart!!)
@@ -618,7 +672,7 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
         }
     }
 
-    val backtrace: List<RoutePart> get() = parent?.backtrace?.plus(this) ?: emptyList()
+    val backtrace: List<RoutePart> get() = parent?.backtrace?.plus(this) ?: listOf(this)
 
     operator fun invoke(builder: RoutePart.() -> Unit) = builder()
 
@@ -638,7 +692,22 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
 
     private var pageRegistered = false
 
-    operator fun <T : Any> PageDef<T>.invoke(dataBuilder: DataBuilder.() -> T): Route<T> {
+    internal var handler: (UrlData.() -> Unit)? = null
+        private set
+
+    /**
+     * For doing all-endpoint things like parameter validation.  Ran each time this endpoint has parse attempted.  Throwing an exception will fail the parse
+     */
+    @RoutingDSL
+    fun handle(handler: UrlData.() -> Unit){
+        if(this.handler != null)
+            error("Handler already set")
+
+        this.handler = handler
+    }
+
+    @RoutingDSL
+    override operator fun <T : Any> PageDef<T>.invoke(dataBuilder: UrlData.() -> T): Route<T> {
 
         if (pageRegistered)
             error("Page already registered for this route")
@@ -651,5 +720,6 @@ sealed class RoutePart(val parent: RoutePart?, val routes: BaseRoutes) : RouteBu
         return route
     }
 
-    operator fun PageDef<Unit>.invoke() = invoke { Unit }
+    @RoutingDSL
+    override operator fun PageDef<Unit>.invoke() = invoke { Unit }
 }
