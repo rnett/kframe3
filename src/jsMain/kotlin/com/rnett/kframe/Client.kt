@@ -2,13 +2,11 @@ package com.rnett.kframe
 
 import com.rnett.kframe.binding.watchBinding
 import com.rnett.kframe.dom.basics.div
-import com.rnett.kframe.dom.core.click
 import com.rnett.kframe.dom.core.document
 import com.rnett.kframe.dom.core.style.Color
 import com.rnett.kframe.dom.core.style.Padding
 import com.rnett.kframe.dom.core.style.px
-import com.rnett.kframe.dom.input.button
-import com.rnett.kframe.routing.goto
+import com.rnett.kframe.dom.input.intInput
 import com.rnett.kframe.style.StyleClass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -16,13 +14,15 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.time.seconds
 
-val padded = StyleClass{
+val padded = StyleClass {
     padding = Padding(20.px)
     margin {
         left = 20.px
         top = 20.px
     }
 }
+
+data class Tester(val t: Int = 10)
 
 //TODO better way of setting title
 fun main() {
@@ -38,19 +38,27 @@ fun main() {
                 }
 
                 Routing.incrementPage { incrementWatcher ->
-                    var incrementValue by incrementWatcher
+                    var increment by incrementWatcher
                     div {
                         +padded
                         watchBinding(incrementWatcher) {
-                            +"Value: ${incrementValue.value}"
+                            +"Value: ${increment.value}"
                         }
                     }
-                    div{
-                        style.margin.top = 20.px
-                        button{
-                            +"Go Home"
-                            on.click{
-                                Routing.mainRoute.goto(Unit, "/")
+                    div {
+                        +padded
+                        +"Step:"
+                        //TODO need a way to bind directly to increment.step (probably going to rely on compiler plugin)
+                        intInput(increment.step, { it != 0 }) {
+                            backing.onSet {
+                                incrementWatcher.update { step = it }
+                            }
+                        }
+
+                        div {
+                            +padded
+                            watchBinding(incrementWatcher) {
+                                +"Step: ${increment.step}"
                             }
                         }
                     }
@@ -59,7 +67,7 @@ fun main() {
                         while(this.isActive) {
                             delay(5.seconds)
                             console.log("Incrementing")
-                            incrementValue = incrementValue.copy(value = incrementValue.value + incrementValue.step)
+                            incrementWatcher.update { value += step }
                         }
                     }
                 }

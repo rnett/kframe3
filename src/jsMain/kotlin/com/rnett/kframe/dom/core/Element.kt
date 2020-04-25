@@ -1,10 +1,10 @@
 package com.rnett.kframe.dom.core
 
 import com.rnett.kframe.binding.WatchBinding
-import com.rnett.kframe.binding.WrapperWatch
+import com.rnett.kframe.binding.watch.WrapperWatch
 import com.rnett.kframe.binding.watchBinding
+import com.rnett.kframe.dom.core.providers.*
 import com.rnett.kframe.dom.core.style.Style
-import com.rnett.kframe.dom.providers.*
 import com.rnett.kframe.routing.PageDef
 import com.rnett.kframe.routing.RouteInstance
 import com.rnett.kframe.routing.RoutingDefinition
@@ -99,21 +99,24 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
                 if(before == null)
                     addElement(element)
                 else
-                    before.realizedNodeOrNull?.let{ provider.insertChild(it, node) }
+                    before.realizedNodeOrNull?.let { provider.insertChild(it, node) }
             }
         }
     }
 
     val isRealized: Boolean get() = this._provider.isRealized
-    internal val realizedProviderOrNull get()  = _provider.realizedProviderOrNull
+    internal val realizedProviderOrNull get() = _provider.realizedProviderOrNull
     override val realizedNodeOrNull: Node?
         get() = realizedProviderOrNull?.underlying
 
+    val properties = Properties(this)
+
+    @Deprecated("You probably want to use properties", replaceWith = ReplaceWith("properties"))
     val attributes = Attributes(this)
 
     val style by lazy { Style(this) }
 
-    var id by attributes
+    var id by properties
 
     val classes = Classes(this)
 
@@ -131,10 +134,10 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
         classes += Document.styleClassHolder.addStyleClass(this)
     }
 
-    private var _elementId by attributes.byInt(KFRAME_ELEMENT_ID_NAME)
+    private var _elementId by properties.byInt(KFRAME_ELEMENT_ID_NAME)
     val elementId
         get() = _elementId
-                ?: error("Element ID got deleted somehow in the DOM (attribute $KFRAME_ELEMENT_ID_NAME).  This is a bug.")
+            ?: error("Element ID got deleted somehow in the DOM (attribute $KFRAME_ELEMENT_ID_NAME).  This is a bug.")
 
     init {
         _elementId = newElementId()
@@ -161,7 +164,7 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
 
     override fun attach(provider: RealizedExistenceProvider) {
         _provider.attach(provider)
-        attributes.attach(provider)
+        properties.attach(provider)
         classes.attach(provider)
         style.attach(provider)
         eventProvider.attach(provider)
@@ -198,7 +201,7 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
 
     override fun detach() {
         _provider.detach()
-        attributes.detach()
+        properties.detach()
         classes.detach()
         style.detach()
         eventProvider.detach()

@@ -3,8 +3,8 @@ package com.rnett.kframe.dom.core
 import com.rnett.kframe.dom.basics.LinkElement
 import com.rnett.kframe.dom.basics.TitleElement
 import com.rnett.kframe.dom.basics.link
+import com.rnett.kframe.dom.core.providers.RealizedExistenceProvider
 import com.rnett.kframe.dom.core.style.stylesheet
-import com.rnett.kframe.dom.providers.RealizedExistenceProvider
 import com.rnett.kframe.routing.RoutingDefinition
 import com.rnett.kframe.style.StyleClassHolder
 import org.w3c.dom.HTMLElement
@@ -71,7 +71,7 @@ class HeadElement(): MetaElementHost, Element<HeadElement>(null, RealizedExisten
 
     @KFrameDSL
     var favicon
-        get() = faviconElement?.attributes?.get("href")
+        get() = faviconElement?.properties?.get("href")
         set(v) {
             if (v != null) {
                 if (faviconElement == null)
@@ -85,22 +85,22 @@ class HeadElement(): MetaElementHost, Element<HeadElement>(null, RealizedExisten
         }
 
     private var viewportElement: BaseMetaElement? = BaseMetaElement(this, "meta")() {
-        attributes["content"] = "width=device-width, initial-scale=1, shrink-to-fit=no"
-        attributes["name"] = "viewport"
+        properties["content"] = "width=device-width, initial-scale=1, shrink-to-fit=no"
+        properties["name"] = "viewport"
     }
 
     @KFrameDSL
     var viewport
-        get() = viewportElement?.attributes?.get("content")
+        get() = viewportElement?.properties?.get("content")
         set(v) {
             if (v != null) {
                 if (viewportElement == null)
                     viewportElement = BaseMetaElement(this, "meta")() {
-                        attributes["content"] = v
-                        attributes["name"] = "viewport"
+                        properties["content"] = v
+                        properties["name"] = "viewport"
                     }
                 else
-                    viewportElement?.attributes?.set("content", v)
+                    viewportElement?.properties?.set("content", v)
             } else if (viewportElement != null) {
                 viewportElement?.remove()
                 viewportElement = null

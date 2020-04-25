@@ -1,4 +1,4 @@
-package com.rnett.kframe.dom.providers
+package com.rnett.kframe.dom.core.providers
 
 interface Attachable<P> {
     fun attach(provider: P)

@@ -1,4 +1,4 @@
-package com.rnett.kframe.dom.providers
+package com.rnett.kframe.dom.core.providers
 
 import kotlin.dom.addClass
 import kotlin.dom.hasClass

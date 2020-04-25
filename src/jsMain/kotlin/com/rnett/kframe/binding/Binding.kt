@@ -3,8 +3,8 @@ package com.rnett.kframe.binding
 import com.rnett.kframe.dom.core.AnyElement
 import com.rnett.kframe.dom.core.DisplayElementHost
 import com.rnett.kframe.dom.core.ElementHost
-import com.rnett.kframe.dom.providers.ExistenceProvider
-import com.rnett.kframe.dom.providers.TextProvider
+import com.rnett.kframe.dom.core.providers.ExistenceProvider
+import com.rnett.kframe.dom.core.providers.TextProvider
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 

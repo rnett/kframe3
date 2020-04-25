@@ -1,7 +1,7 @@
 package com.rnett.kframe.dom.core.style
 
 import com.rnett.kframe.dom.core.Element
-import com.rnett.kframe.dom.providers.*
+import com.rnett.kframe.dom.core.providers.*
 import com.rnett.kframe.utils.DelegateInterface
 import com.rnett.kframe.utils.StringDelegatable
 import com.rnett.kframe.utils.by
@@ -83,12 +83,12 @@ class MapDelegate(private val internalMap: MutableMap<String, String> = mutableM
 fun String.camelToDash() = Regex("([A-Z])").replace(this.decapitalize()) { "-" + it.value.toLowerCase() }
 
 class Style internal constructor(internal val provider: StyleProvider) : StringDelegatable(),
-    StyleDelegate, Rectifiable<Style>, ExistenceAttachable {
+    StyleDelegate, ExistenceAttachable {
     constructor() : this(VirtualStyleProvider(true))
     internal constructor(element: Element<*>) : this(StyleProviderWrapper(element.provider.styleProvider()))
 
     override fun attach(provider: RealizedExistenceProvider) {
-        if(this.provider is StyleProviderWrapper)
+        if (this.provider is StyleProviderWrapper)
             this.provider.attach(provider)
         else error("Can't attach a saved style")
     }
@@ -152,25 +152,6 @@ class Style internal constructor(internal val provider: StyleProvider) : StringD
             other.delegate.forEach {
                 this[(if (other.prefix == null) defaultPrefix?.let { "$it-" } ?: "" else "") + it.key] = it.value
             }
-        }
-    }
-
-    override fun rectify(source: Style) {
-        val thisMap = provider.map()
-        val otherMap = source.provider.map()
-        otherMap.forEach { (key, value) ->
-            if (key !in thisMap || thisMap[key] != value) {
-
-                if (value.first != thisMap[key]?.first)
-                    setValue(key, value.first)
-
-                if (value.second != thisMap[key]?.second)
-                    important[key] = value.second
-            }
-        }
-        thisMap.keys.forEach {
-            if (it !in otherMap)
-                this.remove(it)
         }
     }
 

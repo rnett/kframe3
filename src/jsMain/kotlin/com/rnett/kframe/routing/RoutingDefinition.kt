@@ -1,7 +1,8 @@
 package com.rnett.kframe.routing
 
-import com.rnett.kframe.binding.watchLateinitWrapper
-import com.rnett.kframe.binding.watchWrapper
+import com.rnett.kframe.binding.watch.WatcherId
+import com.rnett.kframe.binding.watch.watchLateinitWrapper
+import com.rnett.kframe.binding.watch.watchWrapper
 import kotlin.browser.window
 import kotlin.reflect.KProperty
 
@@ -107,13 +108,16 @@ actual class RouteInstance<T> actual constructor(
 ) {
     val dataWatcher by lazy { watchWrapper(data) }
 
-    actual fun getData(): T = dataWatcher.getValue()
+    actual fun getData(): T = dataWatcher.value
 
     operator fun provideDelegate(thisRef: Any?, property: KProperty<*>) = dataWatcher
 
+    // lifecycle control
+    private lateinit var routeListener: WatcherId<T>
+
     init {
         if (route is ReactiveRoute) {
-            dataWatcher.onSet {
+            routeListener = dataWatcher.onSet {
                 route.setUrlIfRouteActive(it)
             }
         }

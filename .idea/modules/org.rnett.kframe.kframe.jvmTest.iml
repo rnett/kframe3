@@ -6,8 +6,8 @@
         <dependsOnModuleNames>kframe:commonTest</dependsOnModuleNames>
         <sourceSets>
           <sourceSet>org.rnett.kframe.kframe.jvmMain</sourceSet>
-          <sourceSet>org.rnett.kframe.kframe.commonTest</sourceSet>
           <sourceSet>org.rnett.kframe.kframe.commonMain</sourceSet>
+          <sourceSet>org.rnett.kframe.kframe.commonTest</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <externalSystemTestTasks>jvmTest|kframe:jvmTest|jvm</externalSystemTestTasks>

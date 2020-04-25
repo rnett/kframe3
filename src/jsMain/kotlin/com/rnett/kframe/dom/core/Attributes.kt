@@ -1,6 +1,9 @@
 package com.rnett.kframe.dom.core
 
-import com.rnett.kframe.dom.providers.*
+import com.rnett.kframe.dom.core.providers.AttributeProviderWrapper
+import com.rnett.kframe.dom.core.providers.ClassProviderWrapper
+import com.rnett.kframe.dom.core.providers.ExistenceAttachable
+import com.rnett.kframe.dom.core.providers.RealizedExistenceProvider
 import com.rnett.kframe.utils.StringDelegatable
 import com.rnett.kframe.utils.StringDelegatePassthrough
 
@@ -11,7 +14,7 @@ interface JSValue {
     fun toJS(): String?
 }
 
-class Attributes internal constructor(element: Element<*>) : StringDelegatable(), Rectifiable<Attributes>, ExistenceAttachable {
+class Attributes internal constructor(element: Element<*>) : StringDelegatable(), ExistenceAttachable {
 
     internal val provider = AttributeProviderWrapper(element.provider.attributeProvider())
 
@@ -46,22 +49,9 @@ class Attributes internal constructor(element: Element<*>) : StringDelegatable()
     }
 
     val data = Data()
-
-    override fun rectify(source: Attributes) {
-        val thisMap = provider.map().filter { it.key !in blacklist }
-        val otherMap = source.provider.map().filter { it.key !in blacklist }
-        otherMap.forEach { (key, value) ->
-            if(key !in thisMap || thisMap[key] != value)
-                this.setValue(key, value)
-        }
-        thisMap.keys.forEach {
-            if(it !in otherMap)
-                this.remove(it)
-        }
-    }
 }
 
-class Classes internal constructor(element: Element<*>): Rectifiable<Classes>, ExistenceAttachable {
+class Classes internal constructor(element: Element<*>) : ExistenceAttachable {
 
     internal val provider = ClassProviderWrapper(element.provider.classProvider())
 
@@ -94,12 +84,4 @@ class Classes internal constructor(element: Element<*>): Rectifiable<Classes>, E
     fun set(klasses: List<String>?) = if (klasses == null) clear() else provider.set(klasses)
 
     fun clear() = provider.clear()
-
-    override fun rectify(source: Classes) {
-        val thisList = list.toSet()
-        val otherList = source.list.toSet()
-
-        this.add(*(otherList - thisList).toTypedArray())
-        this.remove(*(thisList - otherList).toTypedArray())
-    }
 }

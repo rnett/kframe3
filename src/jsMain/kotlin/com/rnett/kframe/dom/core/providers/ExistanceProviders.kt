@@ -1,4 +1,4 @@
-package com.rnett.kframe.dom.providers
+package com.rnett.kframe.dom.core.providers
 
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.Node
@@ -17,6 +17,7 @@ interface ExistenceProvider {
     fun eventProvider(): EventProvider
     fun styleProvider(): StyleProvider
     fun textProvider(text: String): TextProvider
+    fun propertiesProvider(): PropertyProvider
 }
 
 internal class VirtualExistenceProvider(override val tag: String) : ExistenceProvider, VirtualProvider{
@@ -38,6 +39,7 @@ internal class VirtualExistenceProvider(override val tag: String) : ExistencePro
     override fun eventProvider(): EventProvider = VirtualEventProvider()
     override fun styleProvider(): StyleProvider = VirtualStyleProvider(false)
     override fun textProvider(text: String): TextProvider = VirtualTextProvider(text)
+    override fun propertiesProvider(): PropertyProvider = VirtualPropertyProvider(null)
 }
 
 class RealizedExistenceProvider(override val tag: String, underlying: HTMLElement = document.createElement(tag) as HTMLElement): ExistenceProvider, RealizedProvider {
@@ -67,6 +69,7 @@ class RealizedExistenceProvider(override val tag: String, underlying: HTMLElemen
     override fun eventProvider(): EventProvider = RealizedEventProvider(this)
     override fun styleProvider(): StyleProvider = RealizedStyleProvider(this)
     override fun textProvider(text: String): TextProvider = RealizedTextProvider(text)
+    override fun propertiesProvider(): PropertyProvider = RealizedPropertyProvider(this)
 }
 
 internal class ExistenceProviderWrapper(initial: ExistenceProvider): ExistenceProvider, ExistenceAttachable{
@@ -105,6 +108,7 @@ internal class ExistenceProviderWrapper(initial: ExistenceProvider): ExistencePr
     override fun eventProvider(): EventProvider = provider.eventProvider()
     override fun styleProvider(): StyleProvider = provider.styleProvider()
     override fun textProvider(text: String): TextProvider = provider.textProvider(text)
+    override fun propertiesProvider(): PropertyProvider = provider.propertiesProvider()
 
     val isRealized: Boolean get() = provider is RealizedExistenceProvider
     internal val realizedProviderOrNull get()  = if (isRealized) provider as RealizedExistenceProvider else null

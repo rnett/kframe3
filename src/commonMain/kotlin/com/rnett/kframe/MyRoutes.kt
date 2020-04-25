@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 //TODO check serial compatibility when routes are created (including optionals, etc)
 
 @Serializable
-data class IncrementData(@SerialName("increment") val value: Int, val step: Int = 1)
+data class IncrementData(@SerialName("increment") var value: Int, var step: Int = 1)
 
 
 object Routing : RoutingDefinition() {

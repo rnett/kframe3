@@ -16,19 +16,19 @@ inline val DisplayElementHost.span inline get() = element("span")
 inline val DisplayElementHost.p inline get() = element("p")
 
 class AElement(parent: DisplayElementHost) : DisplayElement<AElement>(parent, "a") {
-    var href by attributes
-    var download by attributes
-    var type by attributes
+    var href by properties
+    var download by properties
+    var type by properties
 }
 
 @KFrameDSL
 inline val DisplayElementHost.a inline get() = AElement(this)
 
 class ImageElement(parent: DisplayElementHost) : DisplayElement<ImageElement>(parent, "img") {
-    var src by attributes
+    var src by properties
 
-    var height by attributes.byInt
-    var width by attributes.byInt
+    var height by properties.byInt
+    var width by properties.byInt
 }
 
 @KFrameDSL

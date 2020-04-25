@@ -1,4 +1,4 @@
-package com.rnett.kframe.dom.providers
+package com.rnett.kframe.dom.core.providers
 
 import org.w3c.dom.Text
 import kotlin.browser.document

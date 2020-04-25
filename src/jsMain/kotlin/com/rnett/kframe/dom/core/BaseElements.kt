@@ -1,6 +1,6 @@
 package com.rnett.kframe.dom.core
 
-import com.rnett.kframe.dom.providers.*
+import com.rnett.kframe.dom.core.providers.*
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

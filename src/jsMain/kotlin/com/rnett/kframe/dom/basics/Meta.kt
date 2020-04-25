@@ -9,10 +9,10 @@ inline val MetaElementHost.script
     inline get() = ScriptElement(this)
 
 class ScriptElement(parent: MetaElementHost) : MetaElement<ScriptElement>(parent, "script") {
-    var src by attributes
-    var type by attributes
-    var integrity by attributes
-    var crossorigin by attributes
+    var src by properties
+    var type by properties
+    var integrity by properties
+    var crossorigin by properties
 }
 
 @KFrameDSL
@@ -42,10 +42,10 @@ class TitleElement(parent: MetaElementHost) : MetaElement<TitleElement>(parent, 
 }
 
 class LinkElement(parent: MetaElementHost) : MetaElement<LinkElement>(parent, "link") {
-    var rel by attributes
-    var href by attributes
-    var integrity by attributes
-    var crossorigin by attributes
+    var rel by properties
+    var href by properties
+    var integrity by properties
+    var crossorigin by properties
 }
 
 @KFrameDSL
