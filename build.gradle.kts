@@ -4,6 +4,8 @@ import java.net.URL
 plugins {
     kotlin("multiplatform") version "1.4-M1"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.4-M1"
+    maven
+    `maven-publish`
 }
 
 group = "org.rnett.kframe"
@@ -25,6 +27,8 @@ val ktor_version = "1.3.2-1.4-M1"
 val coroutines_version = "1.3.5-1.4-M1"
 //val kotlinx_html_version = "0.6.12"
 val serialization_version = "0.20.0-1.4-M1"
+
+val do_jitpack_commit_fix = true
 
 repositories {
     mavenCentral()
@@ -157,4 +161,40 @@ tasks.register<JavaExec>("runKtor") {
     val t = tasks.named<Jar>("jvmJar")
 
     classpath(configurations.named("jvmRuntimeClasspath"), t.get())
+}
+
+val latest_commit_version = getNewestCommit("rnett/" + project.name)
+val do_jitpack_fix = do_jitpack_commit_fix && "jitpack" in projectDir.path
+
+if (do_jitpack_fix) {
+    tasks["publishToMavenLocal"].doLast {
+        val artifacts = publishing.publications.filterIsInstance<MavenPublication>().map { it.artifactId }
+
+        val dir: File = File(publishing.repositories.mavenLocal().url)
+            .resolve(project.group.toString().replace('.', '/'))
+
+        dir.listFiles { it -> it.name in artifacts }
+            .flatMap {
+                (it.listFiles { it -> it.isDirectory }?.toList()
+                    ?: emptyList<File>()) + it.resolve("maven-metadata-local.xml")
+            }
+            .flatMap {
+                if (it.isDirectory) {
+                    it.listFiles { it ->
+                        it.extension == "module" ||
+                                "maven-metadata" in it.name ||
+                                it.extension == "pom"
+                    }?.toList() ?: emptyList()
+                } else listOf(it)
+            }
+            .forEach {
+                val text = it.readText()
+                println("Replacing ${project.version} with $latest_commit_version and ${project.group} with com.github.rnett.${project.name} in $it")
+                it.writeText(
+                    text
+                        .replace(project.version.toString(), latest_commit_version)
+                        .replace(project.group.toString(), "com.github.rnett.${project.name}")
+                )
+            }
+    }
 }
