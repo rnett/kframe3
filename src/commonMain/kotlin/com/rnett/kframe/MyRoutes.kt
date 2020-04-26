@@ -16,7 +16,7 @@ object Routing : RoutingDefinition() {
     val mainPage = unitPageDef()
     val incrementPage = jsonPageDef(IncrementData.serializer())
 
-    val mainRoute: Route<Unit>
+    val mainRoute: ReactiveRoute<Unit>
     val incrementRoute: JsonRoute<IncrementData>
     val incrementRoute2: ReactiveRoute<IncrementData>
 

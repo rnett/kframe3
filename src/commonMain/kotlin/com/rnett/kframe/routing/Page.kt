@@ -8,13 +8,6 @@ import kotlinx.serialization.json.*
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-/*
-TODO reactiveity infered from route
-    use serialization style compiler plugin, can set keys, location by annotating data class items.
-    validation could be done during init (or in constructor?)
-    then check that required params are present and of the right type when used/route is defined
- */
-
 private val usedIds = mutableSetOf<Int>()
 private fun newPageId(): Int {
     var id: Int

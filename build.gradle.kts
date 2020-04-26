@@ -46,6 +46,10 @@ kotlin {
         browser {
             dceTask {
                 keep("ktor-ktor-io.\$\$importsForInline\$\$.ktor-ktor-io.io.ktor.utils.io")
+                keep("@material")
+                dceOptions {
+                    devMode = true
+                }
             }
             webpackTask {
                 mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
@@ -55,15 +59,15 @@ kotlin {
 //        useCommonJs()
 
 
-//        configure(compilations) {
-//            kotlinOptions {
-//                noStdlib = true
-//                sourceMapEmbedSources = "always"
-//                metaInfo = true
-//                sourceMap = true
-//                moduleKind = "commonjs"
-//            }
-//        }
+        configure(compilations) {
+            kotlinOptions {
+                noStdlib = true
+                sourceMapEmbedSources = "always"
+                metaInfo = true
+                sourceMap = true
+                moduleKind = "commonjs"
+            }
+        }
 //
 //        compilations["main"].kotlinOptions {
 //            main = "call"
@@ -133,6 +137,9 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version")
 
+
+                api(npm("material-components-web"))
+
 //                implementation("org.jetbrains.kotlinx:kotlinx-html-js:$kotlinx_html_version")
             }
         }
@@ -163,38 +170,38 @@ tasks.register<JavaExec>("runKtor") {
     classpath(configurations.named("jvmRuntimeClasspath"), t.get())
 }
 
-val latest_commit_version = getNewestCommit("rnett/" + project.name)
+val latest_commit_version = getNewestCommit("rnett/kframe3")
 val do_jitpack_fix = do_jitpack_commit_fix && "jitpack" in projectDir.path
 
-if (do_jitpack_fix) {
-    tasks["publishToMavenLocal"].doLast {
-        val artifacts = publishing.publications.filterIsInstance<MavenPublication>().map { it.artifactId }
-
-        val dir: File = File(publishing.repositories.mavenLocal().url)
-            .resolve(project.group.toString().replace('.', '/'))
-
-        dir.listFiles { it -> it.name in artifacts }
-            .flatMap {
-                (it.listFiles { it -> it.isDirectory }?.toList()
-                    ?: emptyList<File>()) + it.resolve("maven-metadata-local.xml")
-            }
-            .flatMap {
-                if (it.isDirectory) {
-                    it.listFiles { it ->
-                        it.extension == "module" ||
-                                "maven-metadata" in it.name ||
-                                it.extension == "pom"
-                    }?.toList() ?: emptyList()
-                } else listOf(it)
-            }
-            .forEach {
-                val text = it.readText()
-                println("Replacing ${project.version} with $latest_commit_version and ${project.group} with com.github.rnett.${project.name} in $it")
-                it.writeText(
-                    text
-                        .replace(project.version.toString(), latest_commit_version)
-                        .replace(project.group.toString(), "com.github.rnett.${project.name}")
-                )
-            }
-    }
-}
+//if (do_jitpack_fix) {
+//    tasks["publishToMavenLocal"].doLast {
+//        val artifacts = publishing.publications.filterIsInstance<MavenPublication>().map { it.artifactId }
+//
+//        val dir: File = File(publishing.repositories.mavenLocal().url)
+//            .resolve(project.group.toString().replace('.', '/'))
+//
+//        dir.listFiles { it -> it.name in artifacts }
+//            .flatMap {
+//                (it.listFiles { it -> it.isDirectory }?.toList()
+//                    ?: emptyList<File>()) + it.resolve("maven-metadata-local.xml")
+//            }
+//            .flatMap {
+//                if (it.isDirectory) {
+//                    it.listFiles { it ->
+//                        it.extension == "module" ||
+//                                "maven-metadata" in it.name ||
+//                                it.extension == "pom"
+//                    }?.toList() ?: emptyList()
+//                } else listOf(it)
+//            }
+//            .forEach {
+//                val text = it.readText()
+//                println("Replacing ${project.version} with $latest_commit_version and ${project.group} with com.github.rnett.${project.name} in $it")
+//                it.writeText(
+//                    text
+//                        .replace(project.version.toString(), latest_commit_version)
+//                        .replace(project.group.toString(), "com.github.rnett.${project.name}")
+//                )
+//            }
+//    }
+//}

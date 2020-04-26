@@ -31,13 +31,13 @@ abstract class BaseBinding<S: BaseBinding<S, T>, T>(val parent: DisplayElementHo
         parent.addElement(element)
     }
 
-    override fun removeChild(element: ElementHost) {
+    override fun removeChild(element: ElementHost, removeUnderlying: Boolean) {
         children.remove(element)
-        parent.removeChild(element)
+        parent.removeChild(element, removeUnderlying)
     }
 
     override fun remove() {
-        children.forEach { it.remove() }
+        children.toList().forEach { it.remove() }
         parent.removeChild(this)
         _supervisorJob?.cancel()
     }
@@ -47,7 +47,10 @@ abstract class BaseBinding<S: BaseBinding<S, T>, T>(val parent: DisplayElementHo
         val originalProvider = elementAncestor.realizedProviderOrNull
         if(originalProvider != null)
             elementAncestor.detach()
-        children.forEach { it.remove() }
+        children.toList().forEach {
+            val child = it
+            removeChild(child, false)
+        } //leave underlying for attaching
         children.clear()
         _supervisorJob?.cancelChildren()
         display(this as S, value)

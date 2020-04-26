@@ -97,8 +97,12 @@ fun <T> Route<T>.goto(data: T, url: String) {
     routing.goto(this, data, url)
 }
 
-fun <T : Any> ReactiveRoute<T>.goto(data: T) {
+fun <T> ReactiveRoute<T>.goto(data: T) {
     routing.goto(this, data)
+}
+
+fun ReactiveRoute<Unit>.goto() {
+    routing.goto(this, Unit)
 }
 
 actual class RouteInstance<T> actual constructor(

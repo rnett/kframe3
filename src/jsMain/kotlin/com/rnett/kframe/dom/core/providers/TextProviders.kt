@@ -39,7 +39,6 @@ class RealizedTextProvider(internal val underlying: Text): TextProvider, Realize
     }
 }
 
-//TODO probably needs fixes.  Especially creation / appending to parent
 internal class TextProviderWrapper(initial: TextProvider): TextProvider, Attachable<RealizedTextProvider>{
     private var provider: TextProvider = initial
 

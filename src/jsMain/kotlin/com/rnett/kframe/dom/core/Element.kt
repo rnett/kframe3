@@ -14,7 +14,25 @@ import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import org.w3c.dom.*
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.Node
+import org.w3c.dom.Text
+import org.w3c.dom.asList
+import kotlin.collections.List
+import kotlin.collections.MutableMap
+import kotlin.collections.contains
+import kotlin.collections.filterIsInstance
+import kotlin.collections.forEach
+import kotlin.collections.mapNotNull
+import kotlin.collections.minusAssign
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.mutableSetOf
+import kotlin.collections.plusAssign
+import kotlin.collections.set
+import kotlin.collections.toList
+import kotlin.collections.toSet
+import kotlin.collections.toTypedArray
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -27,11 +45,12 @@ annotation class KFrameDSL
 
 interface HasNode {
     val realizedNodeOrNull: Node?
+    fun createAndAttach()
 }
 
-interface ElementHost: CoroutineScope {
+interface ElementHost : CoroutineScope {
     fun addElement(element: ElementHost)
-    fun removeChild(element: ElementHost)
+    fun removeChild(element: ElementHost, removeUnderlying: Boolean = true)
     fun remove()
 
     operator fun String.unaryPlus() = TextElement(this@ElementHost, this)
@@ -52,13 +71,13 @@ typealias AnyElement = Element<*>
 
 //TODO implement rectify.  Check on benifits of virtual DOMs
 abstract class Element<S : Element<S>> internal constructor(val parent: ElementHost?, provider: ExistenceProvider) :
-        ElementHost, ExistenceAttachable, HasNode {
+    ElementHost, ExistenceAttachable, HasNode {
 
     private val _provider = ExistenceProviderWrapper(provider)
     val provider: ExistenceProvider = _provider
 
     private var _supervisorJob: CompletableJob? = null
-    private val scope: CoroutineScope by lazy{
+    private val scope: CoroutineScope by lazy {
         CoroutineScope(Dispatchers.Default + (_supervisorJob ?: SupervisorJob().also { _supervisorJob = it }))
     }
 
@@ -73,7 +92,7 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
     }
 
     val tag = provider.tag
-    internal val eventProvider by lazy{ EventProviderWrapper(provider.eventProvider()) }
+    internal val eventProvider = EventProviderWrapper(provider.eventProvider())
 
     private val _children = mutableListOf<ElementHost>()
 
@@ -85,21 +104,17 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
         _children += element
     }
 
-    override fun removeChild(element: ElementHost) {
+    override fun removeChild(element: ElementHost, removeUnderlying: Boolean) {
         _children -= element
-        if (element is HasNode)
+        if (element is HasNode && removeUnderlying)
             element.realizedNodeOrNull?.let(provider::removeChild)
     }
 
-    private fun insertChildNode(index: Int, element: ElementHost){
-        if(element is HasNode) {
+    private fun insertChildNode(before: Node, element: ElementHost) {
+        if (element is HasNode) {
             val node = element.realizedNodeOrNull
-            if(node != null) {
-                val before = children.take(index + 1).lastOrNull { it is HasNode } as HasNode?
-                if(before == null)
-                    addElement(element)
-                else
-                    before.realizedNodeOrNull?.let { provider.insertChild(it, node) }
+            if (node != null) {
+                provider.insertChild(before, node)
             }
         }
     }
@@ -114,7 +129,9 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
     @Deprecated("You probably want to use properties", replaceWith = ReplaceWith("properties"))
     val attributes = Attributes(this)
 
-    val style by lazy { Style(this) }
+    val data by lazy { attributes.data }
+
+    val style = Style(this)
 
     var id by properties
 
@@ -144,7 +161,7 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
         Document.addElement(elementId, this)
     }
 
-    internal fun changeId(newId: Int){
+    internal fun changeId(newId: Int) {
         Document.removeElement(elementId)
         _elementId = newId
         Document.addElement(elementId, this)
@@ -154,7 +171,7 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
         private set
 
     override fun remove() {
-        children.forEach { it.remove() }
+        children.toList().forEach { it.remove() }
         parent?.removeChild(this)
         provider.remove()
         _supervisorJob?.cancel()
@@ -162,51 +179,80 @@ abstract class Element<S : Element<S>> internal constructor(val parent: ElementH
         Document.removeElement(elementId)
     }
 
-    override fun attach(provider: RealizedExistenceProvider) {
+    open fun initUnderlying(provider: RealizedExistenceProvider){
+
+    }
+
+    final override fun attach(provider: RealizedExistenceProvider) {
         _provider.attach(provider)
         properties.attach(provider)
         classes.attach(provider)
         style.attach(provider)
         eventProvider.attach(provider)
 
-        val underlyingChildren = provider.underlying.childNodes.asList()
         var idx = 0
 
         //TODO some sort of edit distance algorithm.  needs delete/add cost, use but add children cost, and use but only edit attributes cost (the lowest)
         children.forEach {
-            if(idx < underlyingChildren.size) {
+            val underlyingChildren = provider.underlying.childNodes.asList()
+            val child = it
+            if (idx < underlyingChildren.size) {
                 val elementAt = underlyingChildren[idx]
 
-                if (it is Element<*> && elementAt is HTMLElement && elementAt.tagName.toLowerCase() == it.tag) {
-                    it.attach(RealizedExistenceProvider(it.tag, elementAt))
-                } else if (elementAt is Text && it is TextElement) {
-                    it.attach(RealizedTextProvider(elementAt))
+
+
+                if (child is Element<*> && elementAt is HTMLElement && elementAt.tagName.toLowerCase() == child.tag) {
+                    child.attach(RealizedExistenceProvider(child.tag, elementAt))
+                } else if (elementAt is Text && child is TextElement) {
+                    child.attach(RealizedTextProvider(elementAt))
                 } else {
-                    if(it is HasNode)
-                        insertChildNode(idx, it)
-                    else
+                    if (child is HasNode) {
+
+                        // make a new node, then insert
+                        child.createAndAttach()
+
+                        insertChildNode(elementAt, child)
+                    } else
                         return@forEach
                 }
                 idx++
             } else {
-                if (it is HasNode)
-                    it.realizedNodeOrNull?.let(this.provider::addChild)
+                if (child is HasNode) {
+                    child.createAndAttach()
+                    child.realizedNodeOrNull?.let(this.provider::addChild)
+                    idx++
+                }
             }
         }
 
-        while (provider.underlying.childNodes.length > children.filterIsInstance<HasNode>().size){
-            provider.underlying.removeChild(provider.underlying.childNodes[provider.underlying.childNodes.length - 1]!!)
+        val childNodes = children.filterIsInstance<HasNode>().mapNotNull { it.realizedNodeOrNull }.toSet()
+        val oldChildNodes = provider.underlying.childNodes.asList().toList()
+
+        oldChildNodes.forEach {
+            if(it !in childNodes){
+                provider.underlying.removeChild(it)
+            }
         }
+
+        initUnderlying(provider)
     }
 
-    override fun detach() {
+    override fun createAndAttach() {
+        attach(RealizedExistenceProvider(this.tag))
+    }
+
+    final override fun detach() {
         _provider.detach()
         properties.detach()
         classes.detach()
         style.detach()
         eventProvider.detach()
 
-        children.forEach { if(it is Attachable<*>) it.detach() }
+        children.forEach { if (it is Attachable<*>) it.detach() }
+    }
+
+    init {
+        realizedProviderOrNull?.let { initUnderlying(it) }
     }
 
 }
@@ -275,18 +321,81 @@ class PagedBinding {
 
 inline fun <reified E : Element<*>> W3Element.asKFrameElement(): E {
     val idStr = getAttribute(KFRAME_ELEMENT_ID_NAME)
-            ?: error("Element ID not found (attribute $KFRAME_ELEMENT_ID_NAME).")
+        ?: error("Element ID not found (attribute $KFRAME_ELEMENT_ID_NAME).")
     val id = idStr.toIntOrNull()
-            ?: error("Element ID was not an int (attribute $KFRAME_ELEMENT_ID_NAME).")
+        ?: error("Element ID was not an int (attribute $KFRAME_ELEMENT_ID_NAME).")
     return Document.elementById(id)
 }
 
 inline fun <reified E : Element<*>> W3Element.asKFrameElementOrNull(): E? {
     val idStr = getAttribute(KFRAME_ELEMENT_ID_NAME) ?: return null
     val id = idStr.toIntOrNull()
-            ?: error("Element ID was present, but not an int (attribute $KFRAME_ELEMENT_ID_NAME).")
+        ?: error("Element ID was present, but not an int (attribute $KFRAME_ELEMENT_ID_NAME).")
 
     return if (id in Document.elements)
         Document.elementById(id)
     else null
+}
+
+
+class TextElement internal constructor(val parent: ElementHost, text: String) :
+        ElementHost, HasNode, Attachable<RealizedTextProvider> {
+    private val provider = TextProviderWrapper(parent.textProvider(text))
+
+    private var _supervisorJob: CompletableJob? = null
+    private val scope: CoroutineScope by lazy{
+        CoroutineScope(Dispatchers.Default + (_supervisorJob ?: SupervisorJob().also { _supervisorJob = it }))
+    }
+
+    override val coroutineContext: CoroutineContext
+        get() = scope.coroutineContext
+
+    init {
+        parent.addElement(this)
+    }
+
+    var text: String
+        get() = provider.text
+        set(value) {
+            provider.text = value
+        }
+
+    override fun addElement(element: ElementHost) {
+        error("Can't add children to a text element")
+    }
+
+    override fun removeChild(element: ElementHost, removeUnderlying: Boolean) {
+        error("Text elements have no children")
+    }
+
+    override fun remove() {
+        provider.remove()
+        parent.removeChild(this)
+        _supervisorJob?.cancel()
+    }
+
+    override fun existenceProvider(tag: String): ExistenceProvider {
+        error("Can't create an existence provider from a text element")
+    }
+
+    override fun textProvider(text: String): TextProvider {
+        error("Can't create a text provider from a text element")
+    }
+
+    val isRealized: Boolean get() = provider.isRealized
+    internal val realizedProviderOrNull get() = provider.realizedProviderOrNull
+    override val realizedNodeOrNull: Node?
+        get() = realizedProviderOrNull?.underlying
+
+    override fun attach(provider: RealizedTextProvider) {
+        this.provider.attach(provider)
+    }
+
+    override fun detach() {
+        provider.detach()
+    }
+
+    override fun createAndAttach() {
+        attach(RealizedTextProvider(text))
+    }
 }

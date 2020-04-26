@@ -5,9 +5,9 @@
       <configuration version="3" platform="JavaScript " allPlatforms="JS []" useProjectSettings="false" isTestModule="true" externalProjectId="kframe">
         <dependsOnModuleNames>kframe:commonTest</dependsOnModuleNames>
         <sourceSets>
-          <sourceSet>org.rnett.kframe.kframe.commonMain</sourceSet>
-          <sourceSet>org.rnett.kframe.kframe.jsMain</sourceSet>
           <sourceSet>org.rnett.kframe.kframe.commonTest</sourceSet>
+          <sourceSet>org.rnett.kframe.kframe.jsMain</sourceSet>
+          <sourceSet>org.rnett.kframe.kframe.commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <externalSystemTestTasks>jsBrowserTest|kframe:jsTest|js</externalSystemTestTasks>
@@ -19,9 +19,10 @@
           <option name="outputFile" value="$MODULE_DIR$/../../build/js/packages/kframe-test/kotlin/kframe-test.js" />
           <option name="noStdlib" value="true" />
           <option name="sourceMap" value="true" />
+          <option name="sourceMapEmbedSources" value="always" />
           <option name="metaInfo" value="true" />
           <option name="target" value="v5" />
-          <option name="moduleKind" value="umd" />
+          <option name="moduleKind" value="commonjs" />
           <option name="main" value="call" />
           <option name="languageVersion" value="1.4" />
           <option name="apiVersion" value="1.4" />

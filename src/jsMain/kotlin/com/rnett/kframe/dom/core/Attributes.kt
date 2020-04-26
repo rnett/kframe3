@@ -14,6 +14,7 @@ interface JSValue {
     fun toJS(): String?
 }
 
+//TODO aria attributes
 class Attributes internal constructor(element: Element<*>) : StringDelegatable(), ExistenceAttachable {
 
     internal val provider = AttributeProviderWrapper(element.provider.attributeProvider())

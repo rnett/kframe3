@@ -31,7 +31,6 @@ class WatcherId<T> internal constructor(val id: Int, watch: Watch<T>) {
     }
 }
 
-//TODO a way to sync/link watches
 abstract class Watch<T>() : ReadWriteProperty<Any?, T> {
     private val _watchers = mutableMapOf<WatcherId<T>, (T) -> Unit>()
 
